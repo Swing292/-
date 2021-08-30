@@ -1,6 +1,8 @@
 [TOC]
 
-# Requests库的安装
+# 一、Requests库入门
+
+## Requests库的安装
 
 步骤
 
@@ -14,7 +16,7 @@
 
    ![image-20210802163658211](1_Requests库入门.assets/image-20210802163658211.png)
 
-# Requests库的get()方法
+## Requests库的get()方法
 
 1. `r = requests.get(url)`
    - 构造一个向服务器请求资源的Request对象
@@ -36,9 +38,9 @@
    2. `r.apparent_encoding`：从内容中分析出的响应内容编码方式（备选编码方式)
       - 根据网页内容分析出的编码方式
 
-# 爬取网页的通用代码框架
+## 爬取网页的通用代码框架
 
-## Requests库的异常
+### Requests库的异常
 
 - `requests.ConnectionError`：网络连接错误异常，如DNS查询失败、拒绝连接等
 - `requests.HTTPError`：HTTP错误异常
@@ -49,7 +51,7 @@
 
 - `r.raise_for_status)`：如果不是200，产生异常**requests.HTTPError**
 
-## 爬取网页的**通用代码框架**：
+### 爬取网页的**通用代码框架**：
 
 ```python
 import requests
@@ -66,7 +68,7 @@ if __name__=="__main__":
     print(getHTMLText(url))
 ```
 
-# HTTP协议及Requests库方法
+## HTTP协议及Requests库方法
 
 1. HTTP协议：
    - Hypertext Transfer Protocol，超文本传输协议。
@@ -90,7 +92,7 @@ if __name__=="__main__":
      - 采用PATCH,仅向URL提交UserName的局部更新请求。**(节省网络带宽)**
      - 采用PUT,必须将所有20个字段一并提交到URL,未提交字段被删除。
 
-# Requests库主要方法解析
+## Requests库主要方法解析
 
 1. Requests库的7个主要方法
    1. `requests.request()`：构造一个请求，支撑以下各方法的基础方法
@@ -154,7 +156,55 @@ if __name__=="__main__":
       - url:拟删除页面的url链接
       - **kwargs : 13个控制访问的参数
 
-# 小结
+## 小结
 
 ![image-20210803023041177](1_Requests库入门.assets/image-20210803023041177.png)
 
+
+
+# 二、网络爬虫的“盗亦有道”
+
+## 网络爬虫引起的问题
+
+1. 分类：
+   1. 爬取网页，玩转网页：小规模,数据量小爬取速度不敏感Requests库
+   2. 爬取网站，爬取系列网站：中规模,数据规模较大爬取速度敏感
+      `Scrapy库`
+   3. 爬取全网：大规模,搜索引擎爬取速度关键（定制开发）
+2. 网络爬虫的“**骚扰**”：
+   - 受限于编写水平和目的,网络爬虫将会为web服务器带来巨大的资源开销。
+3. 网络爬虫的**法律风险**：
+   - 服务器上的数据有产权归属网络爬虫获取数据后牟利将带来法律风险。
+4. 网络爬虫**泄露隐私**：
+   - 网络爬虫可能具备突破简单访问控制的能力,获得被保护数据从而泄露个人隐私。
+5. 网络爬虫的限制：
+   1. 来源审查：判断User-Agent进行限制
+      - 检查来访HTTP协议头的User-Agent域,只响应测览器或友好爬虫的访问。
+   2. 发布公告：Robots协议
+      - 告知所有爬虫网站的爬取策略,要求爬虫遵守。
+
+## Robots协议
+
+1. 概念：Robots Exclusion Standard网络爬虫排除标准
+
+2. 作用：网站告知网络爬虫哪些页面可以抓取，哪些不行。
+
+3. 形式：在网站根目录下的robots.txt文件。
+
+   ```
+   #注释，*代表所有  /代表根目录
+   User-agent:*
+   Disallow : /
+   ```
+
+## Robots协议的遵守方式
+
+1. Robots协议的使用
+   - 网络爬虫：自动或人工识别robots.txt,再进行内
+     容爬取。
+   - 约束性：Robots协议是建议但非约束性,网络爬
+     虫可以不遵守,但存在法律风险。
+
+# 三、Requests库网络爬虫实战(5个实例)
+
+## 实例1:京东商品页面的爬取
