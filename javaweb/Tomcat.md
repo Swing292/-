@@ -173,7 +173,7 @@
            <servlet-name>HelloServlet</servlet-name>
    <!--        url-pattern标签配置访问地址
                /在服务器解析的时候表示地址 http://ip:port/工程路径
-               即/表示地址为：http://ip:port/工程路径/hello
+               即/表示地址为：http://ip:port/工程路径/hello(不以/开头会报错“Incalid <url>-pattern ** in servlet mapping”)
                -->
            <url-pattern>/hello</url-pattern>
        </servlet-mapping>
@@ -181,11 +181,15 @@
    </web-app>
    ```
 
+## 访问路径解读
+
+![image-20220126195817364](Tomcat.assets/image-20220126195817364.png)
+
 ## Servlet的生命周期
 
-1. 执行Servlet构造器方法
-2. 执行init初始化方法
-3. 执行service方法
+1. 执行Servlet构造器方法（第一次访问时调用一次）
+2. 执行init初始化方法（第一次访问时调用一次）
+3. 执行service方法（访问的时候都执行）
 4. destroy方法
 
 ## 通过HttpServlet实现Servlet程序
@@ -248,7 +252,7 @@ Servlet程序的配置信息类，作用：
        </servlet>
    ```
 
-3. 获取ServletContext对象
+3. 获取**ServletContext对象**
 
 4. 举例：（继承Servlet类里面实现的init方法中，也可以在其他地方使用 `ServletConfig servletConfig=getServletConfig()`）
 
@@ -276,7 +280,7 @@ Servlet程序的配置信息类，作用：
 
 - 是一个接口，表示Servlet上下文对象
 
-- 一个web工程，只有一个ServletContext实例
+- **一个web工程，只有一个ServletContext实例**
 
 - 是一个域对象
 
@@ -294,14 +298,24 @@ Servlet程序的配置信息类，作用：
 
 - 作用：
 
-  1. 获取web.xml中配置的上下文参数context-param
+  1. 获取web.xml中配置的上下文参数context-param（属于整个web工程 ）
 
+     ```xml
+     <!--    配置上下文参数（属于整个web工程），可以配置多组-->
+         <context-param>
+             <param-name>username</param-name>
+             <param-value>context</param-value>
+         </context-param>
+     ```
+  
+     
+  
   2. 获取当前工程路径：格式：/工程路径 `getContextPath()`
-
+  
   3. 获取工程部署后在服务器硬盘上的绝对路径（是Idea整合Tomcat后，Tomcat被拷贝的一些副本内容） `getRealPath()`
-
+  
      例子：
-
+  
      ```java
      
      public class ContextServlet extends HttpServlet {
@@ -321,7 +335,7 @@ Servlet程序的配置信息类，作用：
          }
      }
      ```
-
+  
   4. 像Map一样存取数据
 
      ```java
@@ -333,15 +347,15 @@ Servlet程序的配置信息类，作用：
              System.out.println("context1中获取与数据key1的值是："+context.getAttribute("key1"));
          }
      ```
-
+  
   ## Http协议
-
+  
   1. 指客户端和服务器之间通信时发送数据需要遵循的规则
-
+  
   2. HTTP协议中的数据叫报文
-
+  
   3. 客户端给服务器发送数据：请求
-
+  
      - get请求
        1. 请求行
           1. 请求的方式  GET
@@ -350,11 +364,11 @@ Servlet程序的配置信息类，作用：
        2. 请求头
           1. key：value（不同的键值对表示不同的涵义）
      - post请求
-
+  
      服务器给客户端回传数据：响应
-
+  
   ## HttpServletRequest类
-
+  
   - 作用：
     - 请求进入Tomcat，Tomcat就把请求过来的HTTP协议信息封装到Request对象中。HttpServletRequest对象能获取到所有请求的信息。
   - 常用方法：
