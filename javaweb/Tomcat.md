@@ -1,5 +1,7 @@
 [TOC]
 
+
+
 # Tomcat
 
 ## Tomcat介绍
@@ -183,7 +185,7 @@
 
 ## 访问路径解读
 
-![image-20220126195817364](Tomcat.assets/image-20220126195817364.png)
+<img src="Tomcat.assets/image-20220126195817364.png" alt="image-20220126195817364" style="zoom:150%;" />
 
 ## Servlet的生命周期
 
@@ -288,11 +290,9 @@ Servlet程序的配置信息类，作用：
 
   - 区别：
 
-    ​                              存数据                    取数据                     删数据
+    ​                       存数据                    取数据                                   **Map**                    put()                       get()                     remove()
 
-    ​    **Map**                    put()                       get()                     remove()
-
-​                 **域对象**           setAttribute()       getAttribute()       removeAttribute()
+​                          **域对象**           setAttribute()       getAttribute()       removeAttribute()
 
 - 在web工程部署启动的时候创建，在web工程停止的时候销毁
 
@@ -348,52 +348,117 @@ Servlet程序的配置信息类，作用：
          }
      ```
   
-  ## Http协议
-  
-  1. 指客户端和服务器之间通信时发送数据需要遵循的规则
-  
-  2. HTTP协议中的数据叫报文
-  
-  3. 客户端给服务器发送数据：请求
-  
-     - get请求
-       1. 请求行
-          1. 请求的方式  GET
-          2. 请求的资源路径[＋？＋请求参数]
-          3. 请求的协议的版本号  HTTP/1.1
-       2. 请求头
-          1. key：value（不同的键值对表示不同的涵义）
-     - post请求
-  
-     服务器给客户端回传数据：响应
-  
-  ## HttpServletRequest类
-  
-  - 作用：
-    - 请求进入Tomcat，Tomcat就把请求过来的HTTP协议信息封装到Request对象中。HttpServletRequest对象能获取到所有请求的信息。
-  - 常用方法：
-    - `getRequestURI()`：获取请求的资源路径
-    - `getRequestURL()`：获取请求的统一资源定位符（绝对路径）
-    - `getRemoteHost()`：获取客户端的IP地址
-    - `getHeader()`：获取请求头
-    - `getParameter()`：获取请求的参数
-    - `getParameterValues()`：获取请求的参数（多个值时使用）
-    - `getMethod()`：获取请求的方式 get或post
-    - `setAttribute(key,value)`：设置域数据
-    - `getAttribute(key)`：获取域数据
-    - `getRequestDispatcher()`：获取请求转发对象
-  - 如何获取请求：
-    - 通过getParameter()和getParameterValues()
-    - 请求的转发：
-      - 指服务器收到请求后从一个资源跳转到另一个资源的操作
-      - 特点：
-        1. 浏览器地址没有变化
-        2. 是同一次请求
-        3. 共享Request域中的数据
-        4. 可以转发到WEB-INF目录下
+
+## Http协议
+
+1. 指客户端和服务器之间通信时发送数据需要遵循的规则
+
+2. HTTP协议中的数据叫报文
+
+3. 客户端给服务器发送数据：请求
+
+   - get请求
+
+     1. 请求行
+        1. 请求的方式  GET
+        2. 请求的资源路径[＋？＋请求参数]
+        3. 请求的协议的版本号  HTTP/1.1
+     2. 请求头
+        1. key：value（不同的键值对表示不同的涵义）
+
+     ![image-20220215230457589](Tomcat.assets/image-20220215230457589.png)
+
+   - post请求（同get）
+
+     ![image-20220215231241300](Tomcat.assets/image-20220215231241300.png)
+
+   - 常用的请求头
+
+     - Accept:表示客户端可以接收的数据类型
+     - Accpet-Languege:表示客户端可以接收的语言类型
+     - User-Agent:表示客户端浏览器的信息
+     - Host:表示请求时的服务器ip和端口号
+       I
+
+   服务器给客户端回传数据：响应
+
+### 区分GET请求和POST请求
+
+1. get
+   1. form标签中method=get
+   2. a标签
+   3. link标签引入css
+   4. script标签引入js
+   5. img标签引入图片
+   6. iframe标签引入html页面
+   7. 浏览器地址栏输入地址回车
+2. post
+   1. form标签中method=post
+
+### 响应的http协议格式
+
+1. 响应行
+
+   1. 响应的协议和版本号
+   2. 响应的状态码
+   3. 响应状态描述符
+
+2. 响应头
+
+   1. ket:value	不同的响应头表示不同的含义
+
+      空行
+
+3. 响应体：回传给客户端的数据
+
+4. 实例：
+
+   ![image-20220215232941059](Tomcat.assets/image-20220215232941059.png)
+
+5. 常用 的响应码
+
+   1. 200	表示请求成功
+   2. 302    表示请求重定向
+   3. 404    表示服务器收到了请求，但是数据不存在（地址错误）
+   4. 500    表示服务器收到了请求，但是服务器内部错误（代码错误）
+
+6. MIME类型说明
+
+   1. 是HTTP协议中的数据类型
+
+   2. 常用：
+
+      ![image-20220216001249323](Tomcat.assets/image-20220216001249323.png)
+
+## HttpServletRequest类 
+
+- 作用：
+  - 请求进入Tomcat，Tomcat就把请求过来的HTTP协议信息封装到Request对象中。HttpServletRequest对象能获取到所有请求的信息。
+- 常用方法：
+  - `getRequestURI()`：获取请求的资源路径
+  - `getRequestURL()`：获取请求的统一资源定位符（绝对路径）
+  - `getRemoteHost()`：获取客户端的IP地址
+  - `getHeader()`：获取请求头
+  - `getParameter()`：获取请求的参数
+  - `getParameterValues()`：获取请求的参数（多个值时使用）
+  - `getMethod()`：获取请求的方式 get或post
+  - `setAttribute(key,value)`：设置域数据
+  - `getAttribute(key)`：获取域数据
+  - `getRequestDispatcher()`：获取请求转发对象
+- 如何获取请求：
+  - 通过getParameter()和getParameterValues()
+  - 请求的转发：
+    - 指服务器收到请求后从一个资源跳转到另一个资源的操作
+    - 特点：
+      1. 浏览器地址没有变化
+      2. 是同一次请求
+      3. 共享Request域中的数据
+      4. 可以转发到WEB-INF目录下
+      5. 只能访问同一工程下的资源
 
 ## Base标签
 
+- 原因：使用请求转发时候地址是servlet的路径，导致 参照的地址不同
 - 设置当前页面中所有相对路径工作时，参照哪个路径进行跳转
 - / 的不同含义：
   - 浏览器解析时：http://ip:port/
@@ -1066,7 +1131,7 @@ Servlet程序的配置信息类，作用：
 
 # 实战演练
 
-1. 页面Jsp动态化
+1. 页面Jsp动态化 
 
    1. 行头添加page指令
    2. 改后缀
@@ -1082,9 +1147,33 @@ Servlet程序的配置信息类，作用：
    <base href="<%=basePath%>">
    ```
 
-3. 
+3. BeanUtils的使用
+
+   1. 可以一次性将所有的请求参数注入到JavaBean中
+
+   2. 是第三方工具类，需要导包：
+
+      1. commons-beanutils-1.8.0.jar
+      2. commons-logging-1.1.1.jar 
+
+   3. 实例：(注意抛异常)
+
+      ```java
+      //实例1
+      BeanUtils.populate(user,req.getParameterMap());
+      //实例2 封装了webutil工具类
+      WebUtils.copyPataToBean(req,user);
+      ```
 
 
+
+
+# Cookie
+
+1. 是服务器通知客户端保存键值对的一种技术，客户端有了Cookie后，每次请求都发给服务器
+2. 每个cookie的大小不能超过4k
+3. 创建cookie：
+   1. 
 
 
 
