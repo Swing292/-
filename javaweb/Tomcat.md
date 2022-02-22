@@ -1171,17 +1171,148 @@ Servlet程序的配置信息类，作用：
 # Cookie
 
 1. 是服务器通知客户端保存键值对的一种技术，客户端有了Cookie后，每次请求都发给服务器
+
 2. 每个cookie的大小不能超过4k
-3. 创建cookie：
-   1. 
+
+3. **创建cookie：**
+   
+   ```java
+   //        创建cookie对象
+           Cookie cookie=new Cookie("key1","value1");
+   //        通知客户端保存Cookie
+           response.addCookie(cookie);
+   ```
+   
+4. 服务器**获取cookie**
+
+   1. 会返回一个cookie数组：`Cookie[] cookies=request.getCookies();`
+   2. 封装到工具类中：
+
+   ```java
+   public class CookieUtils {
+       public static Cookie findCookie(String name,Cookie[] cookies){
+           if (name==null || cookies==null || cookies.length==0){
+               return null;
+           }
+           for (Cookie cookie : cookies) {
+               if (name.equals(cookie.getName())){
+                   return cookie;
+               }
+           }
+           return null;
+       }
+   }
+   ```
+
+5. Cookie值的**修改**
+
+   1. 方法一
+
+      1. 创建一个要修改的同名的Cookie对象
+
+      2. 在构造器中同时赋予新的Cookie值
+
+         `Cookie cookie=new Cookie("key1","newValue1");`
+
+      3. 调用response.addCookie(Cookie);
+
+   2. 方法二
+
+      1. 先查找到需要修改的Cookie对象
+      2. 调用setValue()方法赋予新的Cookie值
+      3. 调用response.addCookie()通知客户端保存修改
+
+6. 浏览器**查看cookie**
+
+   ![image-20220218164518316](Tomcat.assets/image-20220218164518316.png)
+
+7. Cookie的**生命控制**
+
+   1. 指如何管理cookie什么时候被销毁
+   2. setMaxAge()
+      1. 正数：在指定的秒数后过期
+      2. 负数：当浏览器关闭时，cookie就会销毁（默认值是-1）
+      3. 零：马上删除cookie
+
+8. Cookie有效路径path设置
+
+   1. path属性可以有效过滤发给服务器的cookie
+
+   2. 是通过请求的地址进行有效的过滤
+
+      ```java
+              Cookie cookie=new Cookie("cookiePath1N","cookiePath1V");
+      //        getContextPath()获取工程路径
+      //        不满足/abc的cookie会被过滤
+              cookie.setPath(request.getContextPath()+"/abc");
+              response.addCookie(cookie);
+              response.getWriter().write("创建了一个带有path路径的Cookie");
+      ```
+
+
+## Session会话
+
+1. 是一个接口，是会话，用来维护一个客户端和服务器之间关联的一种技术
+
+2. 每个客户端都有自己的一个Session会话。Session会话中，经常用来保存用户登录之后的信息
+
+3. **Session的创建和获取**：
+
+   1. `request.getSession()`：
+
+      1. 第一次调用时，创建Session
+      2. 之后调用时，获取前面创建的Session会话对象
+
+   2. `isNew()`：判断Session是不是新创建的
+
+      1. true表示刚创建
+      2. false表示获取之前创建
+
+   3. 每个会话都有唯一的身份证号，即Id值
+
+      1. `getId()`：获取Session会话的Id值
+
+   4. 示例：
+
+      ```java
+      //        创建和获取Session会话对象
+              HttpSession session = request.getSession();
+      //        判断当前session会话，是否是新创建出来的
+              boolean isNew=session.isNew();
+      //        获取Session会话的唯一标识id值
+              String id = session.getId();
+              response.getWriter().write("Session的id是"+id+"<br/>");
+              response.getWriter().write("这个Session会话是否是新创建的："+isNew);
+      ```
+
+      
+
+4. Session域数据的存取：
+
+   1. `request.getSession().setAttribute("key","value")`
+   2. `request.getSession().getAttribute("key")`
+
+5. Session生命周期控制
+
+   1. Session的超时指客户端两次请求的最大间隔时长，超过指定时长，Session就会被销毁
+   2. `public void setMaxInactiveInterval(int interval)`：设置Session的超时时间(以s为单位)，值为负数表示永不超时（极少使用）
+   3. `public int getMaxInactiveInterval()`：获取Session的超时时间（默认为1800s，Tomcat的配置文件web.xml中有配置）
+   4. `public void invalidate()`：让当前Session会话马上超时无效
+
+## 浏览器和Session之间的关联
+
+Session技术的底层是基于cookie技术实现的
+
+![image-20220221232912009](Tomcat.assets/image-20220221232912009.png)
+
+## Filter过滤器
+
+1. 是javaweb的三大组件之一，是Java EE的规范，即接口，用于拦截请求，过滤响应
+2. 
 
 
 
-
-
-
-
-
+ 
 
 
 
