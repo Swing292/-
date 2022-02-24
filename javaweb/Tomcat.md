@@ -307,17 +307,16 @@ Servlet程序的配置信息类，作用：
              <param-value>context</param-value>
          </context-param>
      ```
-  
+
      
-  
+
   2. 获取当前工程路径：格式：/工程路径 `getContextPath()`
-  
+
   3. 获取工程部署后在服务器硬盘上的绝对路径（是Idea整合Tomcat后，Tomcat被拷贝的一些副本内容） `getRealPath()`
-  
+
      例子：
-  
+
      ```java
-     
      public class ContextServlet extends HttpServlet {
          protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
      
@@ -335,7 +334,7 @@ Servlet程序的配置信息类，作用：
          }
      }
      ```
-  
+
   4. 像Map一样存取数据
 
      ```java
@@ -347,7 +346,6 @@ Servlet程序的配置信息类，作用：
              System.out.println("context1中获取与数据key1的值是："+context.getAttribute("key1"));
          }
      ```
-  
 
 ## Http协议
 
@@ -1022,69 +1020,69 @@ Servlet程序的配置信息类，作用：
       1. 属性介绍：
 
          - items属性表示遍历的数据源
-      
+
          - var属性表示循环的变量
-      
+
          - begin属性设置开始索引
-      
+
          - end属性设置结束索引
-      
+
          - step属性表示遍历的步长值
-      
+
          - varStatus属性表示当前遍历到的数据的状态
-      
+
            - status实现的接口的方法有：
-      
+
              `Object getCurrent();`：获取当前遍历的数据
-      
+
              `int getIndex();`：获取遍历的索引
-      
+
              `int getCount();`：遍历的个数
-      
+
              `boolean isFirst();`：当前遍历的数据是否为第一个
-      
+
              `boolean isLast();`：当前遍历的数据是否为最后一个
-      
+
              `Integer getBegin();`
-      
+
              `Integer getEnd();`
-      
+
              `Integer getStep();`
-      
+
       2. 遍历1-10：（  for(int i=1,i<=10;i++){}  ）
-      
+
          - ```jsp
            <c:forEach begin="1" end="10" var="i">
                ${i}
            </c:forEach>
            ```
-      
+
          - begin属性设置开始索引，end属性设置结束索引
-      
+
          - var属性表示循环的变量
-      
+
       3. 遍历Object数组：（  `for(Object item : array){} ` ）
-      
+
          - ```jsp
            <c:forEach items="${requestScope.array}" var="item">
                    ${item}
            </c:forEach>
            ```
-      
+
          - items属性表示遍历的数据源
-      
+
          - var属性表示遍历到的数据
-      
+
       4. 遍历Map集合：（  `for(Map.Entry<String,Object> entry : map.entrySet){} ` ）
-      
+
          - ```jsp
            <c:forEach items="${requestScope.map}" var="entry">
                    ${entry}
            </c:forEach>
            ```
-      
+
       5. 遍历List集合
-      
+
          - ```jsp
            <c:forEach items="${requestScope.students}" var="student">
                ${student.id}
@@ -1170,134 +1168,134 @@ Servlet程序的配置信息类，作用：
 
 # Cookie
 
-1. 是服务器通知客户端保存键值对的一种技术，客户端有了Cookie后，每次请求都发给服务器
+是服务器通知客户端保存键值对的一种技术，客户端有了Cookie后，每次请求都发给服务器
 
-2. 每个cookie的大小不能超过4k
+每个cookie的大小不能超过4k
 
-3. **创建cookie：**
-   
+## **创建cookie：**
+
+```java
+//        创建cookie对象
+        Cookie cookie=new Cookie("key1","value1");
+//        通知客户端保存Cookie
+        response.addCookie(cookie);
+```
+
+## 服务器**获取cookie**
+
+1. 会返回一个cookie数组：`Cookie[] cookies=request.getCookies();`
+2. 封装到工具类中：
+
+```java
+public class CookieUtils {
+    public static Cookie findCookie(String name,Cookie[] cookies){
+        if (name==null || cookies==null || cookies.length==0){
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())){
+                return cookie;
+            }
+        }
+        return null;
+    }
+}
+```
+
+## Cookie值的**修改**
+
+1. 方法一
+
+   1. 创建一个要修改的同名的Cookie对象
+
+   2. 在构造器中同时赋予新的Cookie值
+
+      `Cookie cookie=new Cookie("key1","newValue1");`
+
+   3. 调用response.addCookie(Cookie);
+
+2. 方法二
+
+   1. 先查找到需要修改的Cookie对象
+   2. 调用setValue()方法赋予新的Cookie值
+   3. 调用response.addCookie()通知客户端保存修改
+
+## 浏览器**查看cookie**
+
+![image-20220218164518316](Tomcat.assets/image-20220218164518316.png)
+
+## Cookie的**生命控制**
+
+1. 指如何管理cookie什么时候被销毁
+2. setMaxAge()
+   1. 正数：在指定的秒数后过期
+   2. 负数：当浏览器关闭时，cookie就会销毁（默认值是-1）
+   3. 零：马上删除cookie
+
+## Cookie有效路径path设置
+
+1. path属性可以有效过滤发给服务器的cookie
+
+2. 是通过请求的地址进行有效的过滤
+
    ```java
-   //        创建cookie对象
-           Cookie cookie=new Cookie("key1","value1");
-   //        通知客户端保存Cookie
+           Cookie cookie=new Cookie("cookiePath1N","cookiePath1V");
+   //        getContextPath()获取工程路径
+   //        不满足/abc的cookie会被过滤
+           cookie.setPath(request.getContextPath()+"/abc");
            response.addCookie(cookie);
+           response.getWriter().write("创建了一个带有path路径的Cookie");
    ```
-   
-4. 服务器**获取cookie**
 
-   1. 会返回一个cookie数组：`Cookie[] cookies=request.getCookies();`
-   2. 封装到工具类中：
+
+# Session会话
+
+是一个接口，是会话，用来维护一个客户端和服务器之间关联的一种技术
+
+每个客户端都有自己的一个Session会话。Session会话中，经常用来保存用户登录之后的信息
+
+## **Session的创建和获取**：
+
+1. `request.getSession()`：
+
+   1. 第一次调用时，创建Session
+   2. 之后调用时，获取前面创建的Session会话对象
+
+2. `isNew()`：判断Session是不是新创建的
+
+   1. true表示刚创建
+   2. false表示获取之前创建
+
+3. 每个会话都有唯一的身份证号，即Id值
+
+   1. `getId()`：获取Session会话的Id值
+
+4. 示例：
 
    ```java
-   public class CookieUtils {
-       public static Cookie findCookie(String name,Cookie[] cookies){
-           if (name==null || cookies==null || cookies.length==0){
-               return null;
-           }
-           for (Cookie cookie : cookies) {
-               if (name.equals(cookie.getName())){
-                   return cookie;
-               }
-           }
-           return null;
-       }
-   }
+   //        创建和获取Session会话对象
+           HttpSession session = request.getSession();
+   //        判断当前session会话，是否是新创建出来的
+           boolean isNew=session.isNew();
+   //        获取Session会话的唯一标识id值
+           String id = session.getId();
+           response.getWriter().write("Session的id是"+id+"<br/>");
+           response.getWriter().write("这个Session会话是否是新创建的："+isNew);
    ```
 
-5. Cookie值的**修改**
+   
 
-   1. 方法一
+## Session域数据的存取：
 
-      1. 创建一个要修改的同名的Cookie对象
+1. `request.getSession().setAttribute("key","value")`
+2. `request.getSession().getAttribute("key")`
 
-      2. 在构造器中同时赋予新的Cookie值
+## Session生命周期控制
 
-         `Cookie cookie=new Cookie("key1","newValue1");`
-
-      3. 调用response.addCookie(Cookie);
-
-   2. 方法二
-
-      1. 先查找到需要修改的Cookie对象
-      2. 调用setValue()方法赋予新的Cookie值
-      3. 调用response.addCookie()通知客户端保存修改
-
-6. 浏览器**查看cookie**
-
-   ![image-20220218164518316](Tomcat.assets/image-20220218164518316.png)
-
-7. Cookie的**生命控制**
-
-   1. 指如何管理cookie什么时候被销毁
-   2. setMaxAge()
-      1. 正数：在指定的秒数后过期
-      2. 负数：当浏览器关闭时，cookie就会销毁（默认值是-1）
-      3. 零：马上删除cookie
-
-8. Cookie有效路径path设置
-
-   1. path属性可以有效过滤发给服务器的cookie
-
-   2. 是通过请求的地址进行有效的过滤
-
-      ```java
-              Cookie cookie=new Cookie("cookiePath1N","cookiePath1V");
-      //        getContextPath()获取工程路径
-      //        不满足/abc的cookie会被过滤
-              cookie.setPath(request.getContextPath()+"/abc");
-              response.addCookie(cookie);
-              response.getWriter().write("创建了一个带有path路径的Cookie");
-      ```
-
-
-## Session会话
-
-1. 是一个接口，是会话，用来维护一个客户端和服务器之间关联的一种技术
-
-2. 每个客户端都有自己的一个Session会话。Session会话中，经常用来保存用户登录之后的信息
-
-3. **Session的创建和获取**：
-
-   1. `request.getSession()`：
-
-      1. 第一次调用时，创建Session
-      2. 之后调用时，获取前面创建的Session会话对象
-
-   2. `isNew()`：判断Session是不是新创建的
-
-      1. true表示刚创建
-      2. false表示获取之前创建
-
-   3. 每个会话都有唯一的身份证号，即Id值
-
-      1. `getId()`：获取Session会话的Id值
-
-   4. 示例：
-
-      ```java
-      //        创建和获取Session会话对象
-              HttpSession session = request.getSession();
-      //        判断当前session会话，是否是新创建出来的
-              boolean isNew=session.isNew();
-      //        获取Session会话的唯一标识id值
-              String id = session.getId();
-              response.getWriter().write("Session的id是"+id+"<br/>");
-              response.getWriter().write("这个Session会话是否是新创建的："+isNew);
-      ```
-
-      
-
-4. Session域数据的存取：
-
-   1. `request.getSession().setAttribute("key","value")`
-   2. `request.getSession().getAttribute("key")`
-
-5. Session生命周期控制
-
-   1. Session的超时指客户端两次请求的最大间隔时长，超过指定时长，Session就会被销毁
-   2. `public void setMaxInactiveInterval(int interval)`：设置Session的超时时间(以s为单位)，值为负数表示永不超时（极少使用）
-   3. `public int getMaxInactiveInterval()`：获取Session的超时时间（默认为1800s，Tomcat的配置文件web.xml中有配置）
-   4. `public void invalidate()`：让当前Session会话马上超时无效
+1. Session的超时指客户端两次请求的最大间隔时长，超过指定时长，Session就会被销毁
+2. `public void setMaxInactiveInterval(int interval)`：设置Session的超时时间(以s为单位)，值为负数表示永不超时（极少使用）
+3. `public int getMaxInactiveInterval()`：获取Session的超时时间（默认为1800s，Tomcat的配置文件web.xml中有配置）
+4. `public void invalidate()`：让当前Session会话马上超时无效
 
 ## 浏览器和Session之间的关联
 
@@ -1305,14 +1303,312 @@ Session技术的底层是基于cookie技术实现的
 
 ![image-20220221232912009](Tomcat.assets/image-20220221232912009.png)
 
-## Filter过滤器
+# Filter过滤器
 
-1. 是javaweb的三大组件之一，是Java EE的规范，即接口，用于拦截请求，过滤响应
-2. 
+是javaweb的三大组件之一，是Java EE的规范，即接口，用于拦截请求，过滤响应
 
+示例：实现Filter接口，doFilter中实现过滤方法：
 
+```java
+//    用于拦截请求，可以做权限检查
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest httpServletRequest= (HttpServletRequest) servletRequest;
+        HttpSession session = httpServletRequest.getSession();
+        Object user=session.getAttribute("user");
+//        等于null表示还没登录
+        if (user==null){
+            httpServletRequest.getRequestDispatcher("/login.jsp").forward(servletRequest,servletResponse);
+        }else {
+//            授予程序继续访问的权限
+           filterChain.doFilter(servletRequest,servletResponse);
+        }
+    }
+```
+
+在web.xml中配置：
+
+```xml
+<!--用于配置一个filter过滤器-->
+    <filter>
+<!--        给filter起一个别名-->
+        <filter-name>AdminFilter</filter-name>
+<!--        配置filter的全类名-->
+        <filter-class>AdminFilter</filter-class>
+    </filter>
+<!--    配置filter过滤器的拦截路径-->
+    <filter-mapping>
+<!--        表示当前的拦截路径给哪个filter使用-->
+        <filter-name>AdminFilter</filter-name>
+<!--        配置拦截路径
+            /表示请求地址为：http://ip:port/工程路径/  映射到IDEA的web目录
+            /admin/* 表示请求地址为：http://ip:port/工程路径/admin/*
+-->
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+```
+
+总结：
+
+1. 实现了filter的类中在doFilter方法中实现权限控制，授予权限访问则`filterChain.doFilter(servletRequest,servletResponse);`
+2. web.xml中配置filter，url-pattern中配置权限访问地址
+
+## Filter的生命周期
+
+filter的生命周期包含几个方法：
+
+1. 构造器方法
+
+2. init初始化方法
+
+   以上在web工程启动的时候执行
+
+   
+
+3. doFilter过滤方法
+
+   以上拦截到请求的时候执行
+
+   
+
+4. destroy销毁
+
+   停止web工程的时候就会执行（停止web工程时会销毁Filter过滤器）
+
+## FilterConfig类
+
+1. 是Filter过滤器的配置文件类，里面包含了Filter配置文件的配置信息。创建Filter的同时会创建一个FilterConfig类。
+
+2. 作用是获取Filter过滤器的配置内容：
+
+   1. 获取Filter的名称（filter-name）
+
+   2. 获取web.xml中配置的init-param初始化参数
+
+   3. 获取ServletContext对象
+
+   4. 示例：
+
+      ```java
+      public void init(FilterConfig filterConfig) throws ServletException {
+      //        1. 获取Filter的名称（filter-name）
+              System.out.println("Filter的名称为："+filterConfig.getFilterName());
+      //        2. 获取web.xml中配置的init-param初始化参数
+              System.out.println("初始化参数username的值为："+filterConfig.getInitParameter("username"));
+      //        3. 获取ServletContext对象
+              System.out.println("ServletContext对象为："+filterConfig.getServletContext());
+          }
+      ```
+
+      其中web.xml中配置的init-param配置为：
+
+      ```xml
+          <filter>
+              <filter-name>AdminFilter</filter-name>
+              <filter-class>AdminFilter</filter-class>
+      
+      <!-- 可配置多组 -->        
+              <init-param>
+                  <param-name>username</param-name>
+                  <param-value>root</param-value>
+              </init-param>
+          </filter>
+      ```
+
+## FilterChain过滤器链
+
+​	即多个过滤器如何一起工作。
+
+## filterChain.doFilter()方法
+
+作用：
+
+1. 执行下一个Filter过滤器
+2. 执行目标资源
+
+多个Filter过滤器执行的时候，执行的顺序按照web.xml中从上到下配置的顺序决定。（注解配置方式是按照类名的字母顺序决定）
+
+![](Tomcat.assets/image-20220222223645246.png)
+
+特点：
+
+1. 所有Filter和目标资源默认都执行在同一个线程中
+2. 多个Filter共同执行的时候使用同一个Request对象
+
+## Filter的拦截路径
+
+1. 精确匹配：`<url-pattern>/login.jsp</url-pattern>`
+2. 目录匹配：`<url-pattern>/admin/*</url-pattern>`
+3. 后缀名匹配：`<url-pattern>*.jsp</url-pattern>`
+
+# JSON
+
+1. 是一种轻量级（与xml相比）的数据交换格式（客户端与服务器之间业务数据的传输格式）。
+2. 易读性高，同时易于机器解析和生成。
+3. 采用完全独立于语言的文本格式，支持多种语言。
+
+## JSON在Js中使用
+
+### JSON定义
+
+1. 由键值对组成，由花括号包围，每个键由引号引起来，键值之间用冒号分隔，多组键值对之间用逗号分隔
+
+2. 示例：
+
+   ```js
+       <script>
+           <!--        json的定义-->
+           var jsonObj={
+               "key1":12,
+               "key2":true,
+               "key3":"key3value"
+           }
+       </script>
+   ```
+
+3. 注意：
+
+   json本身是一个对象，键可以理解为对象的属性，可以直接使用.访问
+
+### JSON的两种常用方法
+
+1. json有两种存在形式：
+
+   1. 对象的形式，即json对象
+   2. 字符串的形式，即json字符串
+
+2. 两种形式相互转换：
+
+   1. `JSON.stringify()`：json对象->json字符串
+
+   2. `JSON.parse()`：json字符串->json对象
+
+      （JSON要大写）
+
+3. 一般使用场景：
+
+   1. 操作json中的数据时，使用json对象的格式
+   2. 要在客户端和服务器之间进行数据交换数据时，使用json字符串
+
+## JSON在java中使用
+
+需要先导包：
+
+```xml
+    <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.8.5</version>
+    </dependency>
+```
+
+### javaBean和json的互转
+
+```java
+
+        Person person=new Person(1,"javaBean和json的互转");
+//        创建Gson对象实例
+        Gson gson=new Gson();
+//        调用Gson对象实例的toJson方法将java对象转化为json字符串
+        String toJson = gson.toJson(person);
+        System.out.println(toJson);
+//        调用Gson对象的fromJson方法将json字符串转化为java对象
+//        参数一：json字符串   参数二：目标Java对象类型
+        Person person1 = gson.fromJson(toJson, Person.class);
+```
+
+### List和json的互转
+
+```java
+        List<Person> personList=new ArrayList<Person>();
+        personList.add(new Person(1,"国哥"));
+        personList.add(new Person(2,"康师傅"));
+//        将List转换为json字符串
+        Gson gson=new Gson();
+        String toJson = gson.toJson(personList);
+        System.out.println(toJson);
+//        将json字符串转换为List
+        Object o = gson.fromJson(toJson, new PersonListType().getType());
+```
+
+将json字符串转换为List需要创建一个类：
+
+```java
+public class PersonListType extends TypeToken<ArrayList<Person>> {
+}
+```
+
+### map和json的互转
+
+```java
+
+        Map<Integer,Person> personMap=new HashMap<Integer, Person>();
+        personMap.put(1,new Person(1,"国哥好帅"));
+        personMap.put(2,new Person(2,"康师傅也好帅"));
+        Gson gson=new Gson();
+//        把Map集合转换为json字符串
+        String toJson = gson.toJson(personMap);
+        System.out.println(toJson);
+//        把json字符串转换为Map集合（也需要创建一个类，或创建匿名内部类，如下）
+        Object o = gson.fromJson(toJson, new TypeToken<Map<Integer,Person>>(){}.getType());
+```
+
+# AJAX请求
+
+1. 是一种创建交互式网页应用的网页开发技术
+2. 是一种浏览器通过js异步发起请求，局部更新页面的技术
+
+## 原生Ajax请求的示例
+
+js中编写步骤：
+
+1. 创建XMLRequest
+2. 调用open方法设置请求参数
+3. 在send方法前绑定onreadystatechange事件，处理请求完成后的操作
+4. 调用send方法发送请求
+
+```js
+
+        //    1.创建XMLRequest
+            var xmlHttpRequest = new XMLHttpRequest();
+        //    2.调用open方法设置请求参数
+            xmlHttpRequest.open("GET","http://localhost:8088/web/ajaxServlet?action=jsAjax",true)
+        //    3.在send方法前绑定onreadystatechange事件，处理请求完成后的操作
+            xmlHttpRequest.onreadystatechange=function (){
+                if (xmlHttpRequest.readyState==4 && xmlHttpRequest.status==200){
+                    //把响应的数据显示在页面中
+                    document.getElementById("div1").innerHTML=xmlHttpRequest.responseText;
+                //    加工数据
+                    var jsonObj=JSON.parse(xmlHttpRequest.responseText);
+                    document.getElementById("div1").innerHTML="编号："+jsonObj.id+"，姓名："+jsonObj.name;
+                }
+            }
+        //    4.调用send方法发送请求
+            xmlHttpRequest.send();
+```
+
+Servlet中编写步骤：
+
+```java
+//        响应
+        Person person=new Person(1,"person1");
+//        转换为json格式的字符串
+        Gson gson = new Gson();
+        String s = gson.toJson(person);
+        response.getWriter().write(s);
+```
+
+## JQuery中的Ajax请求
+
+$.ajax方法
+
+url	  				表示请求的地址
+type					表示请求的类型GET或 POST请求
+data					表示发送给服务器的数据
+								格式有两种:
+									—: name=value&name=value   二: {key: value}
+success			  请求响应，响应的回调函数
+dataType			响应的数据类型，常用的有text（纯文本）、xml（xml数据）、json（json对象）
 
  
-
-
-
