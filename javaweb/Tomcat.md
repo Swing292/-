@@ -1601,7 +1601,7 @@ Servlet中编写步骤：
 
 ## JQuery中的Ajax请求
 
-$.ajax方法
+### $.ajax方法
 
 url	  				表示请求的地址
 type					表示请求的类型GET或 POST请求
@@ -1611,4 +1611,175 @@ data					表示发送给服务器的数据
 success			  请求响应，响应的回调函数
 dataType			响应的数据类型，常用的有text（纯文本）、xml（xml数据）、json（json对象）
 
- 
+示例：
+
+```js
+    <script type="text/javascript">
+        $(function(){
+        //    ajax请求
+            $("#ajaxBtn").click(function (){
+                $.ajax({
+                    url:"http://localhost:8088/web/ajaxServlet",
+                    data:"action=jqueryAjax",
+                    type:"GET",
+                    success:function (data){
+                        // alert("服务器返回的数据是："+data);
+                    //    处理数据 渲染数据
+                        var jsonObj=JSON.parse(data);
+                        $("#msg").html("编号："+jsonObj.id+"，姓名：" +jsonObj.name);
+                    },
+                    dataType:"text"
+                })
+            })
+        })
+    </script>
+```
+
+ 当返回类型是json时，不需要进行类型转换：
+
+```js
+    <script type="text/javascript">
+        $(function(){
+        //    ajax请求
+            $("#ajaxBtn").click(function (){
+                $.ajax({
+                    url:"http://localhost:8088/web/ajaxServlet",
+                    data:"action=jqueryAjax",
+                    type:"GET",
+                    success:function (data){
+                    //    处理数据 渲染数据
+                        $("#msg").html("编号："+data.id+"，姓名：" +data.name);
+                    },
+                    dataType:"json"
+                })
+            })
+        })
+    </script>
+```
+
+可以写成大括号形式：`data:{action:"jQueryAjax"},`
+
+### $.get方法和$.post方法
+
+​	url	请求的url地址
+
+​	data	发送的数据
+
+​	callback	成功的回调函数
+
+​	type	返回的数据类型
+
+示例：
+
+```js
+        //    ajax--get请求
+            $("#getBtn").click(function (){
+               $.get("http://localhost:8088/web/ajaxServlet","action=jqueryGet",function (data){
+                   $("#msg").html("get编号："+data.id+"，姓名：" +data.name)
+               },"json");
+            });
+
+        //    ajax--post请求
+            $("#postBtn").click(function (){
+                $.post("http://localhost:8088/web/ajaxServlet","action=jqueryPost",function (data){
+                    $("#msg").html("post编号："+data.id+"，姓名：" +data.name)
+                },"json");
+            });
+```
+
+### jQuery的getJSON()方法
+
+​	url	请求的url地址
+
+​	data	发送的数据
+
+​	callback	成功的回调函数
+
+示例：
+
+```js
+        //    ajax--getJson请求
+            $("#getJSONBtn").click(function (){
+                $.getJSON("http://localhost:8088/web/ajaxServlet","action=jqueryGetJSON",function (data){
+                    $("#msg").html("GetJSON编号："+data.id+"，姓名：" +data.name)
+                },"json");
+            });
+```
+
+表单序列化serialize()
+
+- 可以把表单中所有的表单项的内容都获取到，并以name=value&name=value的形式进行拼接
+
+- 示例：
+
+  ```js
+              $("#submit").click(function (){
+              //    参数序列化
+                  alert($("#form01").serialize())
+                  $.getJSON("http://localhost:8088/web/ajaxServlet","action=jquerySerialize",function (data){
+                      $("#msg").html("GetJSON编号："+data.id+"，姓名：" +data.name)
+                  },"json");
+              });
+  ```
+
+# i18N国际化
+
+指同一个网站为不同国家提供不同的语言。
+
+## 国际化三要素
+
+1. Locale对象：表示不同的时区，位置，语言
+
+   1. zh_CN	中国，中文
+
+   2. en_US     英国，英文
+
+   3. 示例：
+
+      ```java
+      //        获取系统默认的语言国家信息
+              Locale locale = Locale.getDefault();
+              System.out.println(locale);
+      
+      //        其他国家语言信息
+              for (Locale availableLocale : Locale.getAvailableLocales()) {
+                  System.out.println(availableLocale);
+              }
+      
+      //        获取中国中文的常量Locale对象
+              System.out.println(Locale.CHINA);
+      ```
+
+2. Properties属性配置文件
+
+   ​	命名标准是baseName_locale.properties
+
+   1. 中文的配置文件名为：i18n_zh_CN.properties
+
+   2. 英文的配置文件名为：i18n_en_US.properties
+
+   3. 示例：
+
+      ![image-20220226153211287](Tomcat.assets/image-20220226153211287.png)
+
+3. ResourceBundle资源包
+
+   1. ResourceBundle.getBundle()：返回ResourceBundle类
+
+      根据给定的baseName和Locale读取响应的配置文件，得到文字信息
+
+   2. ResourceBundle.getString(key)：得到不同国家的语言信息
+
+   3. 示例：
+
+      ```java
+      //        得到我们需要的Locale对象
+              Locale locale = Locale.CHINA;
+      //        通过指定的basename和Locale对象，读取相应的配置文件
+              ResourceBundle bundle = ResourceBundle.getBundle("i18n", locale);
+              System.out.println(bundle.getString("username")
+                      +bundle.getString("password"));
+      ```
+
+
+
