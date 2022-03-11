@@ -312,7 +312,7 @@ test下创建测试类：
 
    ![image-20210802135937274](Mybatis.assets/image-20210802135937274.png)
 
-## **设计模式分析**
+# **设计模式分析**
 
 1. 读取配置文件
 
@@ -346,9 +346,9 @@ test下创建测试类：
 
 ![入门案例的分析](Mybatis.assets/入门案例的分析-1629253436895.png)
 
-## 自定义Mybatis的分析
+# 自定义Mybatis的分析
 
-### 1.查询所有的分析
+## 1.查询所有的分析
 
 使用代理dao的方式实现增删改查的步骤：
 
@@ -424,7 +424,7 @@ test下创建测试类：
 
 ![查询所有的分析](Mybatis.assets/查询所有的分析.png)
 
-### 2.创建代理对象的分析
+## 2.创建代理对象的分析
 
 ![image-20220228013035931](Mybatis.assets/image-20220228013035931.png)
 
@@ -532,11 +532,11 @@ https://www.jianshu.com/p/9bcac608c714
       4. 通过构造函数创建动态代理类实例，构造时调用处理器对象作为参数被传入。
 
 
-## 自定义MyBatis的编程
+# 自定义MyBatis的编程
 
 听不懂
 
-### 步骤：
+## 步骤：
 
 1. SqlSessionFactoryBuilder接收SqlMapConfig.xml文件流，构建出SqlSessiionFactory对象
 
@@ -556,7 +556,7 @@ https://www.jianshu.com/p/9bcac608c714
 
 
 
-### 附：反射回顾
+## 附：反射回顾
 
 1. **获取Class文件对象**
 
@@ -729,7 +729,7 @@ https://www.jianshu.com/p/9bcac608c714
           method.invoke(animal,"三");
       ```
 
-## Mybatis的CRUD（基于代理dao的方式）
+# Mybatis的CRUD（基于代理dao的方式）
 
 1. 步骤：
 
@@ -845,7 +845,7 @@ https://www.jianshu.com/p/9bcac608c714
       3. resultType是指返回的结果类型
       4. order是指该语句的执行次序
 
-## parameterType（输入类型）
+# parameterType（输入类型）
 
 ### 1.传递简单类型
 
@@ -875,7 +875,7 @@ https://www.jianshu.com/p/9bcac608c714
        </select>
    ```
 
-## resultType（输出类型）
+# resultType（输出类型）
 
 封装的实体类属性名需要和数据库的列名保持一致。
 
@@ -907,7 +907,7 @@ https://www.jianshu.com/p/9bcac608c714
 
    注意：需要把下面的resultType改成resultMap
 
-## Mybatis中基于传统dao的方式（编写dao实现类）
+# Mybatis中基于传统dao的方式（编写dao实现类）
 
 1. 编写实现类：  
 
@@ -1007,25 +1007,197 @@ https://www.jianshu.com/p/9bcac608c714
 
    ![非常重要的一张图-分析代理dao的执行过程](Mybatis.assets/非常重要的一张图-分析代理dao的执行过程.png)
 
-## Mybatis中的配置（主配置文件）
+# Mybatis中的配置（主配置文件）
 
-### properties标签
+## properties标签
+
+```xml
+<!--    在configuration中配置-->
+<!--    配置properties-->
+    <properties>
+        <property name="driver" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/eesy_mybatis?characterEncoding=utf8"/>
+        <property name="username" value="username"/>
+        <property name="password" value="password"/>
+    </properties>
+
+<!--    除了上面这种方式外，还可以通过属性引用外部配置文件信息
+		resource属性：指定配置文件位置，按照类路径的写法写，必须存在类路径下
+		url：统一资源标识符，在应用中唯一定位一个资源
+			写法：协议+主机+端口+URI
+-->
+    <properties resource="jdbcConfig.properties"></properties>
+
+<!--    配置环境-->
+    <environments default="mysql">
+<!--        配置MySQL的环境-->
+        <environment id="mysql">
+<!--            配置事务-->
+            <transactionManager type="JDBC"></transactionManager>
+<!--            配置连接池-->
+            <dataSource type="POOLED">
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+```
+
+## typeAliases标签
+
+```xml
+<!--    使用typeAliases配置别名，只能配置domain中类的别名-->
+    <typeAliases>
+<!--        配置别名后就不再区分大小写-->
+<!--        <typeAlias type="com.ning.domain.User" alias="user"></typeAlias>-->
+        
+<!--        用于指定要配置别名的包，指定后该包下的实体类都会注册别名，类名就是别名，不区分大小写-->
+        <package name="com.ning.domain"/>
+    </typeAliases>
+```
+
+除此之外mappers中也可以用package标签配置：
+
+```xml
+    <mappers>
+<!--        <mapper resource="com/ning/dao/IUserDao.xml"></mapper>-->
+<!--        用于指定dao接口所在的包，指定后不需要再写mapper、resource或class了-->
+        <package name="com.ning.dao"/>
+    </mappers>
+```
+
+# 连接池以及事务控制
+
+1. 连接池：
+
+   1. 用于存储连接的一个容器
+   2. 容器：
+      1. 是一个集合对象
+      2. 该集合必须是线程安全的，不能两个线程拿到统一连接
+      3. 该集合还必须实现队列的特性：先进先出
+
+2. mybatis中的连接池配置方式：
+
+   1. 主配置文件SqlMapConfig.xml中的dataSoutce标签，type属性表示了连接池方式
+
+   2. type属性的值：
+
+      1. **POOLED**：采用传统的javax.sql.DataSource规范中的连接池，mybatis中有针对规范的实现
+      2. **UNPOOLED**：采用传统的获取连接的方式，虽然也实现javax.sql.DataSource接口，但是没有池的思想
+      3. **JNDI**：采用服务器提供的JNDI技术实现，来获取DataSource对象，不同的服务器所能拿到DataSource是一样的
+      4. 注意： 如果不是web或者maven的war工程，是不能使用JNDI的。
+      5. 我们使用tomcat服务器采用连接池就是dbcp连接池
+
+   3. 对比POOLED和UNPOOLED配置连接池
+
+      1. POOLED**（常用）**：从池中获取一个连接来使用
+      2. UNPOOLED：每次创建一个新的连接使用
+
+      ![image-20220309143657088](Mybatis.assets/image-20220309143657088.png)
+
+## 连接池的使用及分析
+
+MyBatis 内部分别定义了实现了java.sql.DataSource接口的UnpooledDataSource ，PooledDataSource类来表示UNPOOLED、POOLED 类型的数据源。
+
+### 使用unpooled配置连接池的分析
+
+1. 找到UnpooledDataSource类，crl+n找到该类
+
+2. 分析：该类实现了DataSource，并且里面有个getConnection()方法：
+
+   ![image-20220310135313128](Mybatis.assets/image-20220310135313128.png)
+
+   ![image-20220310135346520](Mybatis.assets/image-20220310135346520.png)
+
+3. 跟踪到doGetConnection()方法：
+
+   里面包含了注册驱动、获取连接 和返回连接
+
+   ![image-20220310135452003](Mybatis.assets/image-20220310135452003.png)
+
+### 使用pooled配置连接池的分析
+
+1. 找到getConnection()方法：
+
+   ![image-20220310135910868](Mybatis.assets/image-20220310135910868.png)
+
+2. 追踪到popConnection()方法：
+
+   ![image-20220310140515735](Mybatis.assets/image-20220310140515735.png)
+
+3. 分析：
+
+   ![mybatis_pooled的过程](Mybatis.assets/mybatis_pooled的过程.png)
+
+## 事务控制的分析
+
+1. 什么是事务
+
+   1. 事务是指是程序中一系列严密的逻辑操作，而且所有操作必须全部成功完成，否则在每个操作中所作的所有更改都会被撤消。
+   2. mybatis中的事务是通过sqlsess ion对象的commit方法和rollback方法实现事务的提交和回滚
+
+2. 事务的四大特性ACID
+
+   1. 原子性(Atomicity)：事务中的全部操作在数据库中是不可分割的，要么全部完成，要么均不执行。
+   2. 一致性(Consistency)：几个并行执行的事务，其执行结果必须与按某一顺序串行执行的结果相一致。
+   3. 隔离性(Isolation)：事务的执行不受其他事务的干扰，事务执行的中间结果对其他事务必须是透明的。
+   4. 持久性(Durability)：对于任意已提交事务，系统必须保证该事务对数据库的改变不被丢失，即使数据库出现故障。   
+
+3. 不考虑隔离性会产生的3个问题
+
+   1. 脏读：A事务中读取到了B事务中未提交的数据，造成数据错误
+   2. 不可重复读：A事务中读取到了B事务中已提交的数据，在特定情景下会产生影响，比如生成统一的数据报表
+   3. 虚读（幻读）：A事务中读取到了B事务中已提交的新插入的数据，影响同上
+
+4. 解决方法：四种隔离级别
+
+   1. 第一种隔离级别：Read uncommitted(读未提交)
+
+      **解决了更新丢失，但还是可能会出现脏读**
+
+   2. 第二种隔离级别：Read committed(读提交)
+
+      **解决了更新丢失和脏读问题**
+
+   3. 第三种隔离级别：Repeatable read(可重复读取)
+
+      **解决了更新丢失、脏读、不可重复读**
+
+   4. 第四种隔离级别：Serializable(可序化)
+
+      **解决了更新丢失、脏读、不可重复读、幻读(虚读)**
+
+      ![image-20220310142743754](Mybatis.assets/image-20220310142743754.png)
+
+5. mybatis中事务的自动提交：
+
+   ![image-20220310141738492](Mybatis.assets/image-20220310141738492.png)
+
+   ![image-20220310141723290](Mybatis.assets/image-20220310141723290.png)
+
+# 基于xml配置的动态Sql语句使用
+
+## mappers配置文件中的几个标签
+
+### <if>
 
 
 
-### typeAliases标签
+### <where>
 
-### mappers标签
+### <foreach>
 
+### <sql>
 
+# 多表操作
 
+## 一对多
 
+## 一对一
 
-
-
-
-
-
+## 多对多
 
 
 
