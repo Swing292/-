@@ -100,6 +100,8 @@
    </project>
    ```
 
+   解决maven配置问题Cannot resolve plugin org.apache.maven.plugins:maven-clean-plugin:2.5：https://blog.csdn.net/lyg9966/article/details/105904175
+
 4. 创建实体类
 
    ![image-20210731230729754](Mybatis.assets/image-20210731230729754.png)
@@ -1181,25 +1183,226 @@ MyBatis 内部分别定义了实现了java.sql.DataSource接口的UnpooledDataSo
 
 ## mappers配置文件中的几个标签
 
-### <if>
+### < if >
 
+```xml
+<!--    根据条件查询-->
+    <select id="findUserByCondition" resultMap="userMap" resultType="user">
+        select * from user where 1=1
+        <if test="username != null">
+            and username=#{username}
+        </if>
+        <if test="sex!=null">
+            and sex=#{sex}
+        </if>
+    </select>
+```
 
+test中是判断条件
 
-### <where>
+### < where >
 
-### <foreach>
+使用where标签改进
 
-### <sql>
+```xml
+    <select id="findUserByCondition" resultMap="userMap" resultType="user">
+        select * from user
+        <where>
+            <if test="username != null">
+                and username=#{username}
+            </if>
+            <if test="sex!=null">
+                and sex=#{sex}
+            </if>
+        </where>
+    </select>
+```
+
+### < foreach >
+
+用于遍历集合，它的属性:
+
+1. collection: 代表要遍历的集合元素，不用加#{}
+2. open: 代表语句的开始部分
+3. close: 代表结束部分
+4. item: 代表遍历集合的每个元素，生成的变量名
+5. sperator:代表分隔符
+
+```xml
+<!--    根据queryVo中的id集合实现查询用户列表-->
+<!--    sql: select * from user where id in(?) -->
+    <select id="findUserInId" resultMap="userMap" parameterType="queryVo">
+        select * from user
+        <where>
+            <if test="ids!=null and ids.size()>0">
+                <foreach collection="ids" open="and id in(" close=")" item="id" separator=",">
+                    <!--    里面的名字要和item的名字一样-->
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+```
+
+### < sql >
+
+方便复用，需要注意分号的添加
+
+```xml
+    <sql id="defaultUser">
+        select * from user;
+    </sql>
+
+<!--    查询所有-->
+    <select id="findAll" resultMap="userMap">
+        <include refid="defaultUser"></include>
+    </select>
+```
 
 # 多表操作
 
-## 一对多
+示例：用户和账户
+
+1. 一个用户可以有多个账户
+2. 一个账户只能属于一个用户(多个账户也可以属于同一个用户）
+
+步骤:
+
+1. 建立两张表:用户表，账户表
+   1. 让用户表和账户表之间具备一对多的关系
+   2. 需要使用外键在账户表中添加
+2. 建立两个实体类:用户实体类和账户实体类
+   1. 让用户和账户的实体类能体现出啦一对多的关系
+3. 建立两个配置文件
+   1. 用户的配置文件
+   2. 账户的配置文件
+4. 实现配置:
+   1. 当我们查询用户时，可以同时得到用户下所包含的账户信
+   2. 当我们查询账户时，可以同时得到账户的所属用户信息
 
 ## 一对一
 
+- 案例：查询所有账户信息，关联查询下单用户信息。
+
+- 注意：因为一个账户信息只能供某个用户使用，所以从查询账户信息出发关联查询用户信息为一对一查询。如果从用户信息出发查询用户下的账户信息则为一对多查询，因为一个用户可以有多个账户。
+
+- 主表：user![image-20220317001838630](Mybatis.assets/image-20220317001838630.png)
+
+- 从表：acccount（`FOREIGN KEY (UID) REFERENCES user(id)`）
+
+<img src="Mybatis.assets/image-20220317001906064.png" alt="image-20220317001906064" style="zoom: 80%;" />
+
+ 
+
+1. 从表实体应该包含一个主表实体的对象引用，即在account实体类中添加一个user属性
+
+2. 定义封装account和user的resultMap，即配置查询结果的列名和实体类的属性名的对应关系
+
+   ```xml
+       <resultMap id="accountUserMap" type="account">
+           <id property="id" column="aid"></id>
+           <result property="uid" column="uid"></result>
+           <result property="money" column="money"></result>
+   <!--        一对一的关系映射，配置封装user的内容-->
+   <!--        column是指通过哪个字段获取的-->
+   <!--        javaType用于提示封装到哪个对象-->
+           <association property="user" column="uid" javaType="user">
+               <id property="id" column="id"></id>
+               <result column="username" property="username"></result>
+               <result column="address" property="address"></result>
+               <result column="sex" property="sex"></result>
+               <result column="birthday" property="birthday"></result>
+           </association>
+       </resultMap>
+   ```
+
+## 一对多
+
+1. 主表实体应该包含从表实体的集合引用，即user实体类中添加Account类型的集合
+
+2. 定义User的resultMap：
+
+   ```xml
+       <resultMap id="userAccountMap" type="user">
+           <id property="id" column="id"></id>
+           <result column="username" property="username"></result>
+           <result column="address" property="address"></result>
+           <result column="sex" property="sex"></result>
+           <result column="birthday" property="birthday"></result>
+   <!--        配置user对象中accounts集合的映射-->
+   <!--        ofType是指集合中元素的类型-->
+           <collection property="accounts" ofType="account">
+               <id property="id" column="id"></id>
+               <result property="uid" column="uid"></result>
+               <result property="money" column="money"></result>
+           </collection>
+       </resultMap>
+   ```
+
 ## 多对多
 
+- 示例：用户和角色
 
+  - 一个用户可以有多个角色
+  - 一个角色可以赋予多个用户
+
+- 步骤:
+
+  1、建立两张表：用户表,角色表
+
+  - 让用户表和角色表具有多对多的关系。
+  - 需要使用中间表，中间表中包含各自的主键，在中间表中是外键。
+
+  2、建立两个实体类：用户实体类和角色实体类
+
+  - 让用户和角色的实体类能体现出来多对多的关系
+  - 各自包含对方一个集合引用
+
+  3、建立两个配置文件
+
+  - 用户的配置文件
+  - 角色的配置文件
+
+  4、实现配置:
+
+  - 当我们查询用户时，可以同时得到用户所包含的角色信息
+  - 当我们查询角色时，可以同时得到角色的所赋予用户信息
+
+- 数据库那边需要使用中间表，做法跟一对多差不多，SQL语句：
+
+  ```sql
+  #查询用户时，可以同时得到用户所包含的角色信息
+  select u.*,r.id as rid,r.`ROLE_NAME`,r.`ROLE_DESC` from role r
+  left outer join user_role ur on r.id=ur.rid
+  left outer join user u on u.id=ur.uid
+  
+  #查询角色时，可以同时得到角色的所赋予用户信息
+  SELECT u.*,r.id AS rid,r.`ROLE_NAME`,r.`ROLE_DESC` FROM user u
+  LEFT OUTER JOIN user_role ur ON u.id=ur.uid
+  LEFT OUTER JOIN role r ON r.id=ur.rid
+  ```
+
+# JNDI
+
+## 概述
+
+1. Java Naming and Directory Interface，即Java命名和目录接口
+2. 是标准的Java命名系统接口，目的是模仿Windows系统中的注册表
+3. ![image-20220317213722051](Mybatis.assets/image-20220317213722051.png)
+
+
+
+## JNDI搭建maven的war工程
+
+1. 新建maven工程
+
+   ![image-20220317213936514](Mybatis.assets/image-20220317213936514.png)
+
+2. 修改maven路径
+
+   ![image-20220317214158722](Mybatis.assets/image-20220317214158722.png)
+
+3. 
 
 
 
