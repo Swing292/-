@@ -1398,11 +1398,125 @@ test中是判断条件
 
    ![image-20220317213936514](Mybatis.assets/image-20220317213936514.png)
 
-2. 修改maven路径
+2. 修改maven路径，创建工程
 
    ![image-20220317214158722](Mybatis.assets/image-20220317214158722.png)
 
-3. 
+3. 创建目录，mian下的java和resources和src下的test，并且设置目录类型
+
+   ![image-20220322134408678](Mybatis.assets/image-20220322134408678.png)
+
+4. 导入依赖（不需要设置打包方式）
+
+   ```xml
+     <dependencies>
+       <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <version>4.11</version>
+         <scope>test</scope>
+       </dependency>
+   
+       <dependency>
+         <groupId>org.mybatis</groupId>
+         <artifactId>mybatis</artifactId>
+         <version>3.4.5</version>
+       </dependency>
+       <dependency>
+         <groupId>mysql</groupId>
+         <artifactId>mysql-connector-java</artifactId>
+         <version>5.1.6</version>
+       </dependency>
+       <dependency>
+         <groupId>log4j</groupId>
+         <artifactId>log4j</artifactId>
+         <version>1.2.12</version>
+       </dependency>
+   <!--    新增-->
+       <dependency>
+         <groupId>javax.servlet</groupId>
+         <artifactId>servlet-api</artifactId>
+         <version>2.5</version>
+       </dependency>
+       <dependency>
+         <groupId>javax.servlet.jsp</groupId>
+         <artifactId>jsp-api</artifactId>
+         <version>2.0</version>
+       </dependency>
+     </dependencies>
+   ```
+
+5. 在webapp下新建文件夹META-INF，新建文件context.xml：
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <Context>
+   <!-- 
+   <Resource 
+   name="jdbc/eesy_mybatis"						数据源的名称
+   type="javax.sql.DataSource"						数据源类型
+   auth="Container"								数据源提供者
+   maxActive="20"									最大活动数
+   maxWait="10000"									最大等待时间
+   maxIdle="5"										最大空闲数
+   username="root"									用户名
+   password="1234"									密码
+   driverClassName="com.mysql.jdbc.Driver"			驱动类
+   url="jdbc:mysql://localhost:3306/eesy_mybatis"	连接url字符串
+   />
+    -->
+   <Resource 
+   name="jdbc/eesy_mybatis"
+   type="javax.sql.DataSource"
+   auth="Container"
+   maxActive="20"
+   maxWait="10000"
+   maxIdle="5"
+   username="root"
+   password="1234"
+   driverClassName="com.mysql.jdbc.Driver"
+   url="jdbc:mysql://localhost:3306/eesy_mybatis"
+   />
+   </Context>
+   ```
+
+6. 替换SqlMapConfig.xml为：
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!-- 导入约束 -->
+   <!DOCTYPE configuration  
+     PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+     "http://mybatis.org/dtd/mybatis-3-config.dtd">
+   <configuration>
+   <typeAliases>
+   		<package name="com.itheima.domain"></package>
+   	</typeAliases>
+   	<!-- 配置mybatis的环境 -->
+   	<environments default="mysql">
+   		<!-- 配置mysql的环境 -->
+   		<environment id="mysql">
+   			<!-- 配置事务控制的方式 -->
+   			<transactionManager type="JDBC"></transactionManager>
+   			<!-- 配置连接数据库的必备信息  type属性表示是否使用数据源（连接池）-->
+   			<dataSource type="JNDI">
+   				<property name="data_source" value="java:comp/env/jdbc/eesy_mybatis"/>
+   			</dataSource>
+   		</environment>
+   	</environments>
+   	
+   	<!-- 指定mapper配置文件的位置 -->
+   	<mappers>
+   		<mapper resource="com/itheima/dao/IUserDao.xml"/>
+   	</mappers>
+   </configuration>
+   ```
+
+7. 配置Tomcat：
+
+   ![image-20220324160525542](Mybatis.assets/image-20220324160525542.png)
+
+8. 将测试代码写入jsp中，运行Tomcat后代码就能跑起来，因为jsp代码经过了服务器
 
 
 
