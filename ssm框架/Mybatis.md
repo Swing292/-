@@ -1533,5 +1533,23 @@ test中是判断条件
    1. 一对多，多对多：通常使用延迟加载
    2. 多对一，一对一：通常使用立即加载
 
+## 一对一实现延迟加载
+
+1. 修改sql语句：
+
+   ```sql
+   SELECT * FROM account;
+   ```
+
+2. 修改resultMap：
+
+   ```xml
+   <!--        一对一的关系映射，配置封装user的内容-->
+   <!--        select属性指定的内容：查询用户的唯一标识-->
+           <association property="user" column="uid" javaType="user" select="com.ning.dao.IUserDao.findById"></association>
+   ```
+
+3. 
+
 
 
