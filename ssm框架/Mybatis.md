@@ -1549,7 +1549,302 @@ test中是判断条件
            <association property="user" column="uid" javaType="user" select="com.ning.dao.IUserDao.findById"></association>
    ```
 
-3. 
+3. 测试：
+
+   还看不出效果：
+
+   ![image-20220401211106212](Mybatis.assets/image-20220401211106212.png)
+
+4. 解决（开启mybatis的延迟加载策略）：
+
+   1. 进入mybatis官网，配置，configuration（配置）下的settings设置
+
+      ![image-20220401211508021](Mybatis.assets/image-20220401211508021.png)
+
+   2. 在配置文件中的<configuration>中配置参数：
+
+      ```xml
+      <!--    配置参数-->
+          <settings>
+      <!--        开启mybatis支持延迟加载-->
+              <setting name="lazyLoadingEnabled" value="true"/>
+      <!--        true值：允许触发方法进行立即加载，否则按需加载-->
+              <setting name="aggressiveLazyLoading" value="false"/>
+          </settings>
+      ```
+
+   3. 测试效果，之前的：
+
+      ![image-20220401211106212](Mybatis.assets/image-20220401211106212.png)
+
+      现在的，逐条加载
+
+      ![image-20220401212328818](Mybatis.assets/image-20220401212328818.png)
+
+      现在是按需加载，因为有for循环需要用数据：
+
+      ![image-20220401212448108](Mybatis.assets/image-20220401212448108.png)
+
+      当把for循环去掉后只会加载一条，测试效果：
+
+      ![image-20220401212545533](Mybatis.assets/image-20220401212545533.png)
+
+      
 
 
+## 一对多实现延迟加载
 
+## 缓存
+
+1. 存在内存中的临时数据
+2. 减少和数据库的交互次数，提高执行效率
+3. 适用于：
+   1. 经常查询，不经常改变
+   2. 数据的正确与否对最终结果影响不大
+4. 不适用于：
+   1. 经常改变
+   2. 数据的正确与否对最终结果影响很大
+
+### 一级缓存
+
+1. mybatis中sqlsession对象的缓存
+
+2. 当执行查询后，查询的结果会同时存入到SqlSession提供的一块区域中，该区域的结构是一个map，当再次查询时候，mybatis会先去sqlsession中查询
+
+3. 当sqlsession对象消失时，一级缓存也会消失
+
+4. 测试类：
+
+   ```java
+           User user1 = iUserDao.findById(41);
+           System.out.println(user1);
+           User user2 = iUserDao.findById(41);
+           System.out.println(user2);
+   
+           System.out.println(user1==user2);
+   ```
+
+   结果：
+
+   ![image-20220403212124084](Mybatis.assets/image-20220403212124084.png)
+
+   sql语句只会执行一次：
+
+   ![image-20220403212212633](Mybatis.assets/image-20220403212212633.png)
+
+5. 测试当sqlsession对象消失时，一级缓存也会消失：
+
+   ```java
+           User user1 = iUserDao.findById(41);
+           System.out.println(user1);
+   
+           session.close();
+   //        再次获取sqlSession对象
+           session=factory.openSession();
+   //        该方法也可以清空缓存
+   //        session.clearCache();
+           iUserDao=session.getMapper(IUserDao.class);
+   
+           User user2 = iUserDao.findById(41);
+           System.out.println(user2);
+   
+           System.out.println(user1==user2);
+   ```
+
+   结果：
+
+   ![image-20220403212643038](Mybatis.assets/image-20220403212643038.png)
+
+   sql语句执行了两次
+
+6. 触发清空一级缓存的情况：
+
+   1. 一级缓存是SqlSession范围的缓存，当调用SqlSession的**修改、增加、删除、commit()、close()等方法**时，一级缓存会清空
+
+   2. 测试：
+
+      ```java
+      //    1.根据id查询用户
+      
+          User user1 = iUserDao.findById(41);
+          System.out.println(user1);
+      
+      //    2.更新用户信息
+          user1.setUsername("更新后");
+          user1.setAddress("北京海淀");
+          iUserDao.updateUser(user1);
+      //    3.再次查询
+          User user2 = iUserDao.findById(41);
+          System.out.println(user2);
+      
+          System.out.println(user1==user2);
+      ```
+
+   3. 测试结果：
+
+      ![image-20220403223600555](Mybatis.assets/image-20220403223600555.png)
+
+      缓存已清空
+
+### 二级缓存
+
+1. 指mybatis中SqlSessionFactory对象的缓存
+
+2. 由同一个SqlSessionFactory对象创建的SqlSession共享其缓存
+
+   ![image-20220403223921054](Mybatis.assets/image-20220403223921054.png)
+
+3. 使用步骤：
+
+   1. 让mybatis框架支持二级缓存（在SqlMapConfig.xml中配置）
+
+      ```xml
+      <!-- 在configuration中 -->
+      <settings>
+          <setting name="cacheEnabled" value="true"/>
+      </settings>
+      ```
+
+   2. 让当前的映射文件支持二级缓存（在IUserDao.xml中配置）
+
+      ```xml
+      <!--    开启user支持二级缓存-->
+          <cache/>
+      
+      <!--    根据id查询用户-->
+          <select id="findById" parameterType="Integer" resultType="User" useCache="true">
+              select * from user where id=#{id};
+          </select>
+      ```
+
+   3. 让当前的操作支持二级缓存（在update支持）
+
+4. 测试结果，只查询了一次：
+
+   ![image-20220403225652205](Mybatis.assets/image-20220403225652205.png)
+
+   但是结果是false：
+
+   ![image-20220403225733074](Mybatis.assets/image-20220403225733074.png)
+
+   因为**二级缓存中存放的内容是数据、不是对象**：
+
+   ![image-20220403225959498](Mybatis.assets/image-20220403225959498.png)
+
+   会创建一个新的对象，然后把数据存放到新的对象中
+
+# MyBatis注解开发
+
+1. 导入依赖：
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <project xmlns="http://maven.apache.org/POM/4.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+       <modelVersion>4.0.0</modelVersion>
+   
+       <groupId>com.ning</groupId>
+       <artifactId>day04_eesy_03annotation_mybatis</artifactId>
+       <version>1.0-SNAPSHOT</version>
+       <packaging>jar</packaging>
+   
+       <dependencies>
+           <dependency>
+               <groupId>org.mybatis</groupId>
+               <artifactId>mybatis</artifactId>
+               <version>3.4.5</version>
+           </dependency>
+           <dependency>
+               <groupId>mysql</groupId>
+               <artifactId>mysql-connector-java</artifactId>
+               <version>5.1.6</version>
+           </dependency>
+           <dependency>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+               <version>1.2.12</version>
+           </dependency>
+           <dependency>
+               <groupId>junit</groupId>
+               <artifactId>junit</artifactId>
+               <version>4.10</version>
+               <scope>test</scope>
+           </dependency>
+       </dependencies>
+   </project>
+   ```
+
+2. 写SqlMapConfig.xml主配置文件：
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE configuration
+           PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+           "http://mybatis.org/dtd/mybatis-3-config.dtd">
+   <configuration>
+   <!--    引入外部配置文件-->
+       <properties resource="jdbcConfig.properties"></properties>
+   <!--    配置别名-->
+       <typeAliases>
+           <package name="com.ning.domain"/>
+       </typeAliases>
+   
+   <!--    配置环境-->
+       <environments default="mysql">
+           <environment id="mysql">
+               <transactionManager type="JDBC"></transactionManager>
+               <dataSource type="POOLED">
+                   <property name="driver" value="${jdbc.driver}"/>
+                   <property name="url" value="${jdbc.url}"/>
+                   <property name="username" value="${jdbc.username}"/>
+                   <property name="password" value="${jdbc.password}"/>
+               </dataSource>
+           </environment>
+       </environments>
+   <!--    引入指定带有注解的dao接口所在位置-->
+       <mappers>
+           <package name="com.ning.dao"/>
+       </mappers>
+   </configuration>
+   ```
+
+3. 并且导入jdbcConfig.properties：
+
+   ```properties
+   jdbc.driver=com.mysql.jdbc.Driver
+   jdbc.url=jdbc:mysql://localhost:3306/ee42
+   jdbc.username=root
+   jdbc.password=ning
+   ```
+
+4. 以及log4j.properties:
+
+   ```properties
+   # Set root category priority to INFO and its only appender to CONSOLE.
+   #log4j.rootCategory=INFO, CONSOLE            debug   info   warn error fatal
+   log4j.rootCategory=debug, CONSOLE, LOGFILE
+   
+   # Set the enterprise logger category to FATAL and its only appender to CONSOLE.
+   log4j.logger.org.apache.axis.enterprise=FATAL, CONSOLE
+   
+   # CONSOLE is set to be a ConsoleAppender using a PatternLayout.
+   log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+   log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+   log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %-6r [%15.15t] %-5p %30.30c %x - %m\n
+   
+   # LOGFILE is set to be a File appender using a PatternLayout.
+   log4j.appender.LOGFILE=org.apache.log4j.FileAppender
+   log4j.appender.LOGFILE.File=d:\axis.log
+   log4j.appender.LOGFILE.Append=true
+   log4j.appender.LOGFILE.layout=org.apache.log4j.PatternLayout
+   log4j.appender.LOGFILE.layout.ConversionPattern=%d{ISO8601} %-6r [%15.15t] %-5p %30.30c %x - %m\n
+   ```
+
+5. 在mybatis中针对crud一共有四个注解：
+
+   @Select @Insert @Update @Delete
+
+6. 编写IUserDao：
+
+7. 
