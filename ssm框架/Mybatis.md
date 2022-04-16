@@ -1847,4 +1847,204 @@ test中是判断条件
 
 6. 编写IUserDao：
 
-7. 
+   ```java
+       /**
+        * 查询所有用户
+        * @return
+        */
+       @Select("select * from user")
+       List<User> findAll();
+   ```
+
+7. 编写SqlMapConfig.xml中的mappers：
+
+   ```xml
+   <!--    引入指定带有注解的dao接口所在位置-->
+       <mappers>
+           <package name="com.ning.dao"/>
+       </mappers>
+   ```
+
+8. 使用注解当xml文件在dao相同的目录结构下时，即使mappers使用package，mybatis也会报错：
+
+   ![image-20220411215131432](Mybatis.assets/image-20220411215131432.png)
+
+   xml文件可以放在其他不相干的目录下。
+
+## 注解开发的CRUD
+
+1. SqlMapConfig.xml中的mapppers使用package属性注定dao接口的位置。
+
+2. 编写IUserDao：
+
+   ```java
+       /**
+        * 保存用户
+        * @param user
+        */
+       @Insert("insert into user(username,address,sex,birthday)values(#{username},#{address},#{sex},#{birthday})")
+       void saveUser(User user);
+   
+       /**
+        * 更新用户
+        * @param user
+        */
+       @Update("update user set username=#{username},sex=#{sex},birthday=#{birthday},address=#{address} where id=#{id}")
+       void updateUser(User user);
+   
+       /**
+        * 删除用户
+        * @param userId
+        */
+       @Delete("delete from user where id=#{id}")
+       void deleteUser(Integer userId);
+   
+       /**
+        * 根据id查询用户
+        * @param userId
+        * @return
+        */
+       @Select("select * from user where id=#{id}")
+       User findById(Integer userId);
+   ```
+
+3. 模糊查询：
+
+   ```java
+   //    第一种方式：在测试中加入%
+   //    @Select("select * from user where username like #{username}")
+   
+   //    第二种方式：直接在sql语句中加%
+       @Select("select * from user where username like '%${value}%'")
+       List<User> findUserByName(String username);
+   ```
+
+4. 查询数量：
+
+   ```java
+       @Select("select count(*) from user")
+       int findTotalUser();
+   ```
+
+## 建立实体类属性和数据库表中列的对应关系
+
+1. 使用@Results：
+
+   ```java
+   @Results(id = "userMap",value={
+       @Result(id = true,column = "id",property = "userId"),
+       @Result(column = "username",property = "username"),
+       @Result(column = "address",property = "userAddress"),
+       @Result(column = "sex",property = "userSex"),
+       @Result(column = "birthday",property = "userBirthday"),
+       })
+   ```
+
+2. 其他方法可以统其id值直接引用：
+
+   ```java
+   //    value = {"userMap"} 只有一个元素，value和{}都可以省略
+       @ResultMap("userMap")
+   ```
+
+   ![image-20220412151504239](Mybatis.assets/image-20220412151504239.png)
+
+## 一对一的查询
+
+1. 创建Account实体类，声明类型为User的成员属性
+
+   ```java
+       //多对一（mybatis中称之为一对一）的映射：一个账户只能属于一个用户
+       private User user;
+   ```
+
+2. 创建IAccountDao接口：
+
+   ```java
+   /**
+    * 查询所有账户，并且获取每个账户所属的用户信息
+    * @return
+    */
+   @Select("select * from account")
+   @Results(id = "accountMap",value = {
+           @Result(id = true,column = "id",property = "id"),
+           @Result(column = "uid",property = "uid"),
+           @Result(column = "money",property = "money"),
+           @Result(property = "user",column = "uid",
+                   one = @One(select="com.ning.dao.IUserDao.findById",fetchType= FetchType.EAGER)
+                   )
+   })
+   List<Account> findAll();
+   ```
+
+3. 其中，声明User成员属性使用：
+
+   ```java
+   @Result(property="user",column="uid",one=@One(select="com.ning.dao.IUserDao.findById",fetchType=FetchType.EAGER))
+   ```
+
+   1. 一对一的关系用one指定：`one=@one{}`
+   2. select属性指定查询findById的方法
+   3. `fetchType=FetchType.EAGER`是指立即加载，一般一对一使用立即加载，一对多使用延时加载。
+
+## 一对多的查询
+
+1. 声明类型为Account的成员属性：
+
+   ```java
+   //    一对多关系映射：一个用户对应多个账户
+       private List<Account> accounts;
+   ```
+
+2. 在Account中补充根据id查询用户信息的方法：
+
+   ```java
+       /**
+        * 根据用户id查询用户账户信息
+        * @param userId
+        * @return
+        */
+       @Select("select * from account where uid=#{userId}")
+       List<Account> findAccountByUid(Integer userId);
+   ```
+
+3. 将方法的全限定类名补充到Result中：
+
+   ```java
+   /**
+    * 查询所有用户
+    * @return
+    */
+   @Select("select * from user")
+   @Results(id = "userMap",value={
+           @Result(id = true,column = "id",property = "userId"),
+           @Result(column = "username",property = "username"),
+           @Result(column = "address",property = "userAddress"),
+           @Result(column = "sex",property = "userSex"),
+           @Result(column = "birthday",property = "userBirthday"),
+           @Result(property = "accounts",column = "id",
+                   many = @Many(select = "com.ning.dao.IAccountDao.findAccountByUid",
+                           fetchType = FetchType.LAZY))
+   })
+   List<User> findAll();
+   ```
+
+## 使用二级缓存
+
+1. 在SqlMapConfig.xml的configuration中配置：
+
+   ```xml
+   <!--    配置开启二级缓存-->
+       <settings>
+           <setting name="cacheEnabled" value="true"/>
+       </settings>
+   ```
+
+2. 在IUserDao接口前面加上 @CacheNamespace：
+
+   ```java
+   @CacheNamespace(blocking = true)
+   public interface IUserDao {}
+   ```
+
+   
