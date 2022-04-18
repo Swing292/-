@@ -276,16 +276,140 @@ Spring是分层的Java SE/EE应用**full-stack** 轻量级开源框架，**以IO
 
    ```xml
    <bean id="instanceFactory" class="com.ning.factory.InstanceFactory"></bean>
-       <bean id="accountService" factory-bean="instanceFactory" factory-method="getAccountService"></bean>
+   <bean id="accountService" factory-bean="instanceFactory" factory-method="getAccountService"></bean>
    ```
 
-3. 
+3. 使用工厂中的静态方法创建对象（使用某个类中的静态方法创建对象，并存入spring容器）
+
+   ```xml
+   <bean id="accountService" class="com.ning.factory.StaticFactory" factory-method="getAccountService"></bean>
+   ```
 
 ### bean对象的作用范围
 
+bean标签的scope属性
+
+1. 用于指定bean的作用范围
+
+2. 取值：
+
+   1. **singleton：单例（默认值）**
+
+   2. **prototype：多例**
+
+   3. request：作用于web应用的请求范围
+
+   4. session：作用于web应用的会话范围
+
+   5. global-session：作用于集群环境的会话范围（全局会话范围），当不是集群环境时，它就是session
+
+      ![image-20220417191730910](Spring.assets/image-20220417191730910.png)
+
+3. 使用：直接追加scope标签
+
+   ```xml
+   <bean id="accountService" class="com.ning.service.impl.AccountServiceImpl" scope="singleton"></bean>
+   ```
+
 ### bean对象的生命周期
 
+1. 单例对象
+   1. 出生：容器创建时
+   2. 活着：只要容器还在，对象就一直活着
+   3. 死亡：容器销毁，对象消亡
+   4. 总结：单例对象的生命周期和容器相同
+2. 多例对象
+   1. 出生：当使用对象时spring创建
+   2. 活着：对象在使用过程中一直活着
+   3. 死亡：当对象长时间不用，且没有别的对象引用时，由java的垃圾回收器回收
+
 # 依赖注入（Dependency Injection）
+
+1. IOC的作用：降低程序间的耦合（依赖关系）
+2. 依赖关系：在当前类需要用到其他类的对象，由spring提供，我们只需要在配置文件中说明
+3. 依赖关系的管理：由spring维护
+4. **依赖注入：**
+   1. 对依赖关系的维护
+   2. 能注入的数据：
+      1. 基本类型和Spring
+      2. 其他bean类型（在配置文件中或注解配置过的bean）
+      3. 复杂类型/集合类型
+   3. **注入方式：**
+      1. 使用构造函数提供
+      2. 使用set方法提供
+      3. 使用注解提供
+
+## 依赖注入的三种方式
+
+### 1. 构造函数注入
+
+1. 使用的标签：constructor-arg
+
+2. 标签出现的位置：bean标签的内部
+
+3. 标签中的属性：
+
+   1. **type**：用于指定要注入的数据类型，该数据类型也是构造函数中某个或某些参数的类型
+
+      （当有两个一样的数据类型时，type不能独立完成注入）
+
+   2. **index**：用于指定要注入的数据给构造函数中指定索引位置的参数赋值，索引的位置从0开始
+
+   3. **name**：用于指定给构造函数中指定名称的参数赋值
+
+   4. **value：**用于提供基本类型和String类型的数据
+
+   5. **ref：**用于指定其他的bean类型数据，指在spring的Ioc核心容器中出现过的bean对象
+
+4. 优势：在获取bean对象时，注入数据是必须的操作，否则对象无法创建成功。
+
+5. 弊端：改变了bean对象的实例化方法，使我们在创建对象时，用不到的数据也必须提供。
+
+6. 代码：
+
+   ```xml
+   <bean id="accountService" class="com.ning.service.impl.AccountServiceImpl">
+           <constructor-arg name="name" value="test"></constructor-arg>
+           <constructor-arg name="age" value="18"></constructor-arg>
+           <constructor-arg name="birthday" ref="now"></constructor-arg>
+   </bean>
+   
+   <!--        配置一个日期对象-->
+   <bean id="now" class="java.util.Date"></bean>
+   ```
+
+### 2. set方法注入（常用）
+
+1. 使用的标签：property
+
+2. 标签出现的位置：bean标签的内部
+
+3. 标签中的属性：
+
+   1. **name：**用于指定注入时所调用的set方法名称（根据set方法名）
+   2. **value：**用于提供基本类型和String类型的数据
+   3. **ref：**用于指定其他的bean类型数据，指在spring的Ioc核心容器中出现过的bean对象
+
+4. 代码：
+
+   ```xml
+   <bean id="accountService2" class="com.ning.service.impl.AccountServiceImpl2">
+           <property name="name" value="TEST"></property>
+           <property name="age" value="20"></property>
+           <property name="birthday" ref="now"></property>
+   </bean>
+   
+   <!--        配置一个日期对象-->
+   <bean id="now" class="java.util.Date"></bean>
+   ```
+
+5. 优势：创建对象时没有明确的限制，可以直接使用默认构造函数
+
+6. 弊端：如果有某个成员必须有值，则获取对象时有可能set方法没有执行。
+
+### 3. 复杂类型的注入（集合类型的注入）
+
+1. 
 
 # 作业
 
