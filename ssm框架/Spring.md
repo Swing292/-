@@ -64,7 +64,7 @@ Spring是分层的Java SE/EE应用**full-stack** 轻量级开源框架，**以IO
 
    得到
 
-### 步骤：
+### 步骤
 
 1. 创建bean.properties配置文件：
 
@@ -321,7 +321,7 @@ bean标签的scope属性
 2. 多例对象
    1. 出生：当使用对象时spring创建
    2. 活着：对象在使用过程中一直活着
-   3. 死亡：当对象长时间不用，且没有别的对象引用时，由java的垃圾回收器回收
+   3. 死亡：当对象长时间不用，且没有别的对象引用时，由java的垃圾回收器回收 
 
 # 依赖注入（Dependency Injection）
 
@@ -409,7 +409,200 @@ bean标签的scope属性
 
 ### 3. 复杂类型的注入（集合类型的注入）
 
-1. 
+1. 用于给List结构集合注入的标签有：
 
-# 作业
+   1. list
+   2. array
+   3. set
+
+2. 用于给Map结构集合注入的标签有：
+
+   1. map
+   2. props
+
+3. 总结：结构相同，标签可以互换
+
+4. 代码：
+
+   ```xml
+   <bean id="accountService3" class="com.ning.service.impl.AccountServiceImpl3">
+           <property name="myStrs">
+                   <array>
+                           <value>AAA</value>
+                           <value>BBB</value>
+                           <value>CCC</value>
+                   </array>
+           </property>
+           <property name="myList">
+                   <list>
+                           <value>AAA</value>
+                           <value>BBB</value>
+                           <value>CCC</value>
+                   </list>
+           </property>
+           <property name="mySet">
+                   <set>
+                           <value>AAA</value>
+                           <value>BBB</value>
+                           <value>CCC</value>
+                   </set>
+           </property>
+           <property name="myMap">
+                   <map>
+                           <entry key="testA" value="aaa"></entry>
+                           <entry key="testB">
+                                   <value>BBB</value>
+                           </entry>
+                   </map>
+           </property>
+           <property name="myProps">
+                   <props>
+                           <prop key="testC">ccc</prop>
+                           <prop key="testD">ddd</prop>
+                   </props>
+           </property>
+   </bean>
+   ```
+
+# ioc的常用注解
+
+## xml配置回顾：
+
+```xml
+<bean id="accountService"     class="com.ning.service.impl.AccountServiceImpl"
+scope="" init-method="" destroy-method="">
+     <property name="" value="" | ref=""</property>
+</bean>
+```
+
+## xml配置文件（使用注解）
+
+1. 需要在xml配置文件中告知spring在创建容器时要扫描的包（配置所需要是标签不是在beans的约束中，而是一个名为**context的名称空间**和约束中）
+
+2. 进入文档，core，导入约束：
+
+   ![image-20220418133610060](Spring.assets/image-20220418133610060.png)
+
+3. 在context名称空间中使用`context:component-scan`标签：
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <beans xmlns="http://www.springframework.org/schema/beans"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:context="http://www.springframework.org/schema/context"
+          xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+       <context:component-scan base-package="com.ning"></context:component-scan>
+   </beans>
+   ```
+
+## 注解的分类
+
+### 用于创建对象
+
+1. 作用：和在xml配置文件中编写一个<bean>标签实现的功能是一样的
+
+2. `@Component`
+
+3. 用于把当前类对象存入spring容器中
+
+4. 属性：
+
+   1. value：用于指定bean的id，默认值是当前类名（首字母小写）
+
+   2. 位置：在类名前（只有一个属性可以把value=省略）
+
+      ```java
+      @Component(value = "accountService")
+      ```
+
+5. 与`@Component`作用和属性一样的注解
+
+   1. `Controller`：一般用在**表现层**
+   2. `Service`：一般用在**业务层**
+   3. `Repository`：一般用在**持久层**
+
+   以上三个注解是spring为我们提供明确的三层使用注解，使我们的三层对象更加清晰。
+
+### 用于注入数据
+
+1. 作用：和在xml配置文件中<bean>标签中写一个<property>标签的作用是一样的
+
+2. `@Autowired`
+
+   1. 自动按照类型注入。
+
+      1. 只要容器中有唯一的一个bean对象类型和要注入的变量类型匹配，就可以注入成功。
+      2. 如果Ioc容器有多个类型匹配时，先圈定数据类型，然后根据变量名称找匹配的id名，如果有匹配则注入成功。
+      3. 如果ioc容器中没有任何bean的类型和要注入的变量类型匹配，则报错。
+
+      ![image-20220418183928619](Spring.assets/image-20220418183928619.png)
+
+   2. 常用位置：
+
+      1. 变量前
+      2. 方法前
+
+   3. 在使用注解注入时，set方法不是必须的。
+
+3. `@Qualifier`
+
+   1. 在按照类中注入的基础之上再按照名称注入。
+   2. 它在给类成员注入时不能单独使用（要搭配@Autowired一起用），但是在给方法参数注入时可以
+   3. 属性：
+      1. value：用于指定注入bean的id
+
+4. `@resource`
+
+   1. 直接按照bean的id注入，可以单独使用
+   2. 属性：
+      1. name：用于指定bean的id
+
+5. 以上三个注解都只能注入其他bean类型的数据，而基本类型和String类型无法使用上述注解实现
+
+6. 集合类型的注入只能通过xml实现 
+
+7. `@Value`
+
+   1. 用于输入基本类型和String类型的数据
+   2. 属性：
+      1. value：用于指定数据的值，可以使用spring中的SpEL（spring的el表达式）
+         1. SpEL的写法：$(表达式)
+
+### 用于改变作用范围
+
+1. 作用：和在xml配置文件中<bean>标签中使用scope属性实现的功能是一样的
+2. `@Scope`
+   1. 用于指定bean的作用范围
+   2. 属性：
+      1. value：指定范围的取值
+      2. 常用取值：
+         1. singleton（默认）
+         2. prototype
+
+### 和生命周期相关
+
+1. 作用：和在xml配置文件中<bean>标签中使用init-method属性和destroy-method属性的作用是一样的
+
+2. `@PreDestory`：用于指定销毁方法
+
+   ```java
+   @PreDestroy
+   public void destroy(){
+       System.out.println("销毁方法执行了");
+   }
+   ```
+
+3. `@PostConstruct`：用于指定初始化方法
+
+   ```java
+   @PostConstruct
+   public void init(){
+       System.out.println("初始化方法执行了");
+   }
+   ```
+
+# 基于XML的IOC案例
 
