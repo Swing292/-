@@ -1594,4 +1594,93 @@ cglibProducer.saleProduct(12000f);
 
 1. `PlatformTransactionManager`接口
    1. 里面有commit()和rollback()方法：![image-20220430154604288](Spring.assets/image-20220430154604288.png)
-   2. 
+
+## spring基于xml的声明式事务控制
+
+### 步骤：
+
+1. 配置事务管理器
+
+   ```xml
+   <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+       <property name="dataSource" ref="dataSource"></property>
+   </bean>
+   ```
+
+2. 配置事务的通知：
+
+   需要导入事务的约束：tx和名称空间和约束，也需要aop的
+
+   ![image-20220501145731057](Spring.assets/image-20220501145731057.png)
+
+   ```xml
+   <tx:advice id="txAdvice" transaction-manager="transactionManager"></tx:advice>
+   ```
+
+   属性：
+
+   1. `id`：给事务通知起一个唯一标识
+   2. `transation-manager`：给事务通知提供一个事务管理器引用
+
+3. 配置aop
+
+   1. 配置aop中的通用切入点表达式：
+
+      ```xml
+      <aop:pointcut id="pt1" expression="execution(* com.ning.service.impl.*.*(..))"/>
+      ```
+
+   2. 建立切入点表达式和事务通知的对应关系：
+
+      ```xml
+      <aop:advisor advice-ref="txAdvice" pointcut-ref="pt1"></aop:advisor>
+      ```
+
+4. 配置事务的属性(在事务的通知`tx:advice`标签内部写)
+
+   1. 属性：
+
+      1. `isolation`：用于指定事务的隔离级别。默认值是DEFAULT，表示使用数据库的默认隔离级别
+      2. `propagation`：用于指定事务的传播行为。默认值是REQUIRED，表示一定会有事务，增删改的选择。查询方法可以选择SUPPORTS
+      3. `read-only`：用于指定事务是否只读。只有查询方法可以设置成true，默认值是false，表示读写
+      4. `timeout`：用于指定事务的超时事件，默认是-1，表示永不超时。如果指定了数值，则以秒为单位
+      5. `rollback-for`：用于指定一个异常，当产生该异常时，事务回滚；产生其他异常时，事务不回滚。没有默认值，表示任何异常都回滚。
+      6. `no-rollback-for`：用于指定一个异常，当产生该异常时，事务不回滚，产生其他异常时事务回滚。没有默认值，表示任何异常都回滚。
+
+   2. 演示：
+
+      ```xml
+      <tx:advice id="txAdvice" transaction-manager="transactionManager">
+          <tx:attributes>
+              <tx:method name="*" propagation="REQUIRED"/>
+              <tx:method name="find*" propagation="SUPPORTS" read-only="true"></tx:method>
+          </tx:attributes>
+      </tx:advice>
+      ```
+
+## spring基于注解的声明式事务控制
+
+1. 导入名称空间，添加注释(dao层实现类不需要继承JdbcDaoSupport类，要自己添加成员变量JdbcTemplate，让spring帮我们注入)
+
+2. 配置事务管理器：
+
+   ```xml
+   <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+       <property name="dataSource" ref="dataSource"></property>
+   </bean>
+   ```
+
+3. 开启spring对注解事务的支持
+
+   ```xml
+   <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+   ```
+
+4. 在需要事务支持的地方使用`@Transaction`注解
+
+## spring基于纯注解的声明式事务控制
+
+看day04_07
+
+
+
