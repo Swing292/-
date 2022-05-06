@@ -131,6 +131,8 @@
 
       ![image-20220504234056856](SpringMVC.assets/image-20220504234056856.png)
 
+      导约束
+      
       ```xml
       <?xml version="1.0" encoding="UTF-8"?>
       <beans xmlns="http://www.springframework.org/schema/beans"
@@ -280,7 +282,7 @@
 
    ![image-20220505155546289](SpringMVC.assets/image-20220505155546289.png)
 
-## 配置解决中文乱码的过滤器
+# 配置解决中文乱码的过滤器
 
 在web.xml中配置filter：
 
@@ -307,8 +309,377 @@
 
 修改后重新加载一下工程
 
-## 自定义类型转换器
+# 自定义类型转换器
 
 ### 步骤
 
 1. 定义一个类，实现Converter接口，该接口有两个泛型
+
+   1. 注意导包:
+
+      ![image-20220505161000786](SpringMVC.assets/image-20220505161000786.png)
+
+   2. 重写方法：
+
+      ```java
+          /**
+           *
+           * @param s 传入进来的字符串
+           * @return
+           */
+          @Override
+          public Date convert(String s) {
+      //        判断
+              if (s==null){
+                  throw new RuntimeException("请您传入数据");
+              }
+              DateFormat df=new SimpleDateFormat("yyyy-MM-dd");
+      //        把字符串转换成日期
+              try {
+                  return df.parse(s);
+              } catch (ParseException e) {
+                  throw new RuntimeException("数据类型转换出现错误");
+              }
+          }
+      ```
+
+2. 配置自定义类型转换器：
+
+   mvc:annotation-driven默认不会配置自定义类型转换器，所以要自己加上
+
+   ```xml
+   <!--配置自定义类型转换器-->
+   <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+       <property name="converters">
+           <set>
+               <bean class="cn.ning.utils.StringToDateConverter"></bean>
+           </set>
+       </property>
+   </bean>
+   
+   <!--开启SpringMVC注解的支持-->
+   <mvc:annotation-driven conversion-service="conversionService"></mvc:annotation-driven>
+   ```
+
+# 获取Servlet的原生API
+
+方法：想获取谁就在参数那写谁
+
+```java
+@RequestMapping("/testServlet")
+public String testServlet(HttpServletRequest request, HttpServletResponse response){
+    System.out.println("执行了……");
+    System.out.println(request);
+    System.out.println(request.getSession());
+    System.out.println(request.getSession().getServletContext());
+    System.out.println(response);
+    return "success";
+}
+```
+
+# 常用注解
+
+## @RequestParam
+
+1. 作用：把请求中指定名称的参数给控制器中的形参赋值
+
+2. 属性：
+
+   1. value：请求参数中的名称
+   2. required：请求参数中是否必须提供此参数，默认值为true
+
+3. 位置：在参数前面
+
+4. 示例：
+
+   ```java
+   public String testRequestParam(@RequestParam(value = "name") String username){
+       System.out.println("执行了……"+username);
+       return "success";
+   }
+   ```
+
+## @RequestBody
+
+1. 作用：获取请求体内容。
+
+2. 直接使用得到是key=value&key=value.. .结构的数据。**get请求方式不适用。**
+
+3. 示例：
+
+   ```java
+   public String testRequestBody(@RequestBody String body){
+       System.out.println("执行了……"+body);
+       return "success";
+   }
+   ```
+
+## @PathVariable
+
+1. 作用：用于绑定url中的占位符。
+
+2. 示例：
+
+   ```java
+   @RequestMapping("/testPathVariable/{id}")
+   public String testPathVariable(@PathVariable(name = "id") String id){
+       System.out.println("执行了……"+id);
+       return "success";
+   }
+   ```
+
+   ```html
+   <a href="anno/testPathVariable/10">RequestParam</a>
+   ```
+
+### restful编程风格
+
+![image-20220505170103320](SpringMVC.assets/image-20220505170103320.png)
+
+## @RequestHeader
+
+1. 作用：获取请求头的值
+
+2. 属性： 
+
+   1. value：提供消息头名称 
+   2. required：是否必须有此消息头
+
+3. 示例：
+
+   ```java
+   public String testRequestHeader(@RequestHeader(value = "Accept") String header){
+       System.out.println("执行了……"+header);
+       return "success";
+   }
+   ```
+
+## @CookieValue
+
+1. 作用：把指定cookie名称的值传入控制器方法参数。
+
+2. 属性： 
+
+   1. value：指定 cookie 的名称。 
+   2. required：是否必须有此 cookie。
+
+3. 示例：
+
+   ```java
+   public String testCookieValue(@CookieValue(value = "JSESSIONID") String cookieValue){
+       System.out.println("执行了……"+cookieValue);
+       return "success";
+   }
+   ```
+
+## @ModelAttribute
+
+1. 作用：用于修饰方法和参数
+
+2. 位置：
+
+   1. 方法上：表示当前方法会在控制器的方法执行之前执行
+   2. 参数上：获取指定的数据给参数赋值
+
+3. 示例：
+
+   1. 有返回值：
+
+      ```java
+          /**
+           * ModelAttribute注解
+           * @return
+           */
+          @RequestMapping("/testModelAttribute")
+          public String testModelAttribute(User user){
+              System.out.println("执行了……"+user);
+              return "success";
+          }
+      
+          /**
+           * 这个方法会先执行
+           * 方法一
+           */
+         @ModelAttribute
+          public User showUser(String uname){
+              System.out.println("showUser()方法执行了……");
+      //        通过用户查询数据库（模拟）
+              User user=new User();
+              user.setUname(uname);
+              user.setAge(20);
+              user.setDate(new Date());
+              return user;
+          }
+      ```
+
+   2. 没有返回值时，存在map集合中：
+
+      ```java
+          /**
+           * ModelAttribute注解
+           * @return
+           */
+          @RequestMapping("/testModelAttribute")
+          public String testModelAttribute(@ModelAttribute("abc") User user){
+              System.out.println("执行了……"+user);
+              return "success";
+          }
+      
+          /**
+           * 方法二
+           * @param uname
+           * @return
+           */
+          @ModelAttribute
+          public void showUser(String uname, Map<String,User> map){
+              System.out.println("showUser()方法执行了……");
+      //        通过用户查询数据库（模拟）
+              User user=new User();
+              user.setUname(uname);
+              user.setAge(20);
+              user.setDate(new Date());
+              map.put("abc",user);
+          }
+      ```
+
+## @SessionAttribute
+
+1. 作用：用于多次执行控制器方法间的参数共享。
+
+2. 属性：
+
+   1.  value：用于指定存入的属性名称 
+   2. type：用于指定存入的数据类型
+
+3. 位置：类上
+
+   1. 存入request域对象中：
+
+      ```java
+          /**
+           * SessionAttribute注解
+           * @return
+           */
+          @RequestMapping("/testSessionAttribute")
+          public String testSessionAttribute(Model model){
+              System.out.println("执行了……");
+      //        底层会存储到request域对象中
+              model.addAttribute("msg","壮壮");
+              return "success";
+          }
+      ```
+
+      存入session域对象中，在类上写：
+
+      ```java
+      @SessionAttributes(value = {"msg"}) //把msg存入到session域中
+      ```
+
+   2. 从session域对象中取值：
+
+      ```java
+      @RequestMapping("/getSessionAttribute")
+      public String getSessionAttribute(ModelMap model){
+          System.out.println("执行了……");
+          System.out.println(model.get("msg"));
+          return "success";
+      }
+      ```
+
+   3. 从session域对象中删除值：
+
+      ```java
+      @RequestMapping("/delSessionAttribute")
+      public String delSessionAttribute(SessionStatus status){
+          System.out.println("执行了……");
+          status.setComplete();
+          return "success";
+      }
+      ```
+
+# 响应数据和结果视图
+
+## 返回值类型
+
+1. 返回字符串：
+
+   ![image-20220505204705105](SpringMVC.assets/image-20220505204705105.png)
+
+2. 返回void
+
+   1. 默认值为请求路径名称：
+
+      ![image-20220505205327066](SpringMVC.assets/image-20220505205327066.png)
+
+   2. 有三种方式：
+
+      ```java
+          /**
+           * 响应之返回值为void
+           */
+          @RequestMapping("testVoid")
+          public void testVoid(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+              System.out.println("执行了……");
+      //        方式一：请求转发
+              request.getRequestDispatcher("/WEB-INF/pages/success.jsp").forward(request,response);
+      
+      //        方式二：请求重定向
+              response.sendRedirect(request.getContextPath()+"/index.jsp");
+      
+      //        设置中文乱码
+              response.setCharacterEncoding("UTF-8");
+              response.setContentType("text/html;charset=UTF-8");
+      //        方式三：直接在浏览器响应
+              response.getWriter().print("你好");
+              return;
+          }
+      ```
+
+3. 返回ModelAndView对象
+
+   把user对象存储导mv对象中，底层会把user对象存入导request对象中
+
+   ```java
+       @RequestMapping("testModelAndView")
+       public ModelAndView testModelAndView(){
+   //        创建ModelAndView对象
+           ModelAndView mv=new ModelAndView();
+   
+           System.out.println("执行了……");
+   //        模拟从数据库中查询出User对象
+           User user=new User();
+           user.setUsername("沸羊羊");
+           user.setPassword("12345");
+           user.setAge(18);
+   
+   //        1.把user对象存储导mv对象中，底层会把user对象存入导request对象中
+           mv.addObject("user",user);
+   
+   //        2.跳转到哪个页面
+           mv.setViewName("success");
+   
+           return mv;
+       }
+   ```
+
+#### 使用关键字进行转发/重定向
+
+```java
+    /**
+     * 使用关键字的方式进行转发或者重定向
+     */
+    @RequestMapping("testForwardOrRedirect")
+    public String testForwardOrRedirect(){
+        System.out.println("执行了……");
+//        请求的转发
+        return "forward:/WEB-INF/pages/success.jsp";
+
+//        重定向
+        return "redirect:/index.jsp";
+    }
+```
+
+## 响应json数据
+
+### 过滤静态资源
+
