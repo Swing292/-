@@ -591,4 +591,222 @@ springboot自动配置了很多东西：
    </project>
    ```
 
-## 
+## web开发
+
+### 简单功能分析
+
+#### 静态资源访问
+
+1. 静态资源目录： `/static` 、`/public` 、 `/resources` 、 `/META-INF/resources`
+
+2. 访问 ： 当前项目根路径/ + 静态资源名
+
+3. 查找顺序：META-INF/resources-> resources- > static- > public
+
+4. 原理： 
+
+   1. 静态映射/**
+   2. 请求进来，先去找Controller看能不能处理。不能处理的所有请求又都交给静态资源处理器。静态资源也找不到则响应404页面
+
+5. 改变默认的静态资源路径（已过时）：
+
+   ```yaml
+   spring:
+     mvc:
+       static-path-pattern: /res/**
+     web:
+       resources:
+         static-locations:
+           [ classpath:/haha/]
+   ```
+
+#### 欢迎页和自定义自定义 `Favicon`
+
+1. 静态资源路径下  index.html
+
+   1.  可以配置静态资源路径
+   2. 但是不可以配置静态资源的访问前缀。否则导致 index.html不能被默认访问
+
+   ```yaml
+   spring:
+   #  mvc:
+   #    static-path-pattern: /res/**   这个会导致welcome page功能失效
+   
+     resources:
+       static-locations: [classpath:/haha/]
+   ```
+
+2. 自定义 `Favicon`：
+
+   把图标favicon.ico 放在静态资源目录下即可。
+
+### 注解
+
+1. @PathVariable：
+
+   1. 获取路径下的参数
+   2. 可以将所有的参数封装到一个map集合中
+
+   ```java
+   @GetMapping("/car/{id}/owner/{username}")
+   public Map<String,Object> getCar(@PathVariable("id") Integer id,
+                                    @PathVariable("username") String name,
+                                    @PathVariable Map<String,String> pv){
+       Map<String,Object> map=new HashMap<>();
+       map.put("id",id);
+       map.put("name",name);
+       map.put("pv",pv);
+       return map;
+   }
+   ```
+
+2. @RequestHeader：
+
+   1. 获取请求头
+   2. 可以将所有的请求头封装到一个map集合中
+
+   ```java
+   @RequestHeader("User-Agent") String userAgent,
+   @RequestHeader Map<String,String> header)
+   ```
+
+3. @RequestParam：
+
+   1. 获取请求参数
+
+   ```java
+   @RequestParam List<String> inters,
+   @RequestParam Map<String,String> params
+   ```
+
+4. @CookieValue：
+
+   1. 获取cookie值
+
+   ```java
+   @CookieValue("_ga") String _ga,
+   @CookieValue("_ga") Cookie cookie
+   ```
+
+5. @RequestBody：
+
+   1. 获取请求体
+   2. 必须是post请求
+
+   ```java
+   @PostMapping("/save")
+   public Map postMethod(@RequestBody String content){
+       Map<String, Object> map = new HashMap<>();
+       map.put("content",content);
+       return map;
+   }
+   ```
+
+6. @RequestAttribute
+
+   1. 取出请求域中的值
+   2. 另一种方式：通过原生的方式通过request对象获取
+
+   ```java
+   @GetMapping("/goto")
+   public String goToPage(HttpServletRequest request){
+       request.setAttribute("msg","成功了");
+       request.setAttribute("code",400);
+       return "forward:/success";//转发到 /success请求
+   }
+   
+   @ResponseBody
+   @GetMapping("/success")
+   public Map success(@RequestAttribute String msg,
+                      HttpServletRequest request){
+   
+       Map<String,Object> map=new HashMap<>();
+       Object code = request.getAttribute("code");
+       map.put("code",code);
+       map.put("msg",msg);
+       return map;
+   }
+   ```
+
+7. @MatrixVariable（矩阵变量）
+
+   1. 矩阵变量
+
+      1. `/cars/{path}?xxx=xxx&aaa=ccc queryString`：查询字符串。使用@RequestParam获取
+      2. `/cars/sell;low=34;brand=byd,audi,yd `：用 ;表示矩阵变量 
+
+   2. 解决cookie禁用的问题：
+
+      1. 分析：session.set(a,b)---> jsessionid ---> cookie ----> 每次发请求携带。
+      2. 解决：url重写：/abc;jsesssionid=xxxx 把cookie的值使用矩阵变量的方式进行传递.
+
+   3. SpringBoot默认禁用了矩阵变量的功能，需要手动开启：
+
+      1. 分析：底层对于路径的处理都是使用UrlPathHelper进行解析的，里面的removeSemicolonContent（移除分号内容）属性用于支持矩阵变量
+
+      ```java
+      @Configuration(proxyBeanMethods = false)
+      public class WebConfig implements WebMvcConfigurer {
+          @Override
+          public void configurePathMatch(PathMatchConfigurer configurer) {
+              UrlPathHelper urlPathHelper = new UrlPathHelper();
+              // 不移除；后面的内容。矩阵变量功能就可以生效
+         urlPathHelper.setRemoveSemicolonContent(false);
+              configurer.setUrlPathHelper(urlPathHelper);
+          }
+      }
+      ```
+
+## 视图解析与模板引擎
+
+SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页面渲染。
+
+### 模板引擎-Thymeleaf
+
+1. 现代化、服务端Java模板引擎
+
+2. 语法：
+
+   1. 表达式：
+
+      | 表达式名字 | 语法   | 用途                               |
+      | ---------- | ------ | ---------------------------------- |
+      | 变量取值   | ${...} | 获取请求域、session域、对象等值    |
+      | 选择变量   | *{...} | 获取上下文对象值                   |
+      | 消息       | #{...} | 获取国际化等值                     |
+      | 链接       | @{...} | 生成链接                           |
+      | 片段表达式 | ~{...} | jsp:include 作用，引入公共页面片段 |
+
+   2. 字面量
+
+      1. 文本值: **'one text'** **,** **'Another one!'** **,…**数字: **0** **,** **34** **,** **3.0** **,** **12.3** **,…**布尔值: **true** **,** **false**
+      2. 空值: **null**
+      3. 变量： one，two，.... 变量不能有空格
+
+   3. 文本操作
+
+      1. 字符串拼接: **+**
+      2. 变量替换: **|The name is ${name}|** 
+
+   4. 数学运算
+
+      1. 运算符: + , - , * , / , %
+
+   5. 布尔运算
+
+      1. 运算符:  **and** **,** **or**
+      2. 一元运算: **!** **,** **not** 
+
+   6. 比较运算
+
+      1. 比较: **>** **,** **<** **,** **>=** **,** **<=** **(** **gt** **,** **lt** **,** **ge** **,** **le** **)**等式: **==** **,** **!=** **(** **eq** **,** **ne** **)** 
+
+   7. 条件运算
+
+      1. If-then: **(if) ? (then)**
+      2. If-then-else: **(if) ? (then) : (else)**
+      3. Default: (value) **?: (defaultvalue)** 
+
+   8. 特殊操作
+
+      1. 无操作： _
