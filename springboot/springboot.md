@@ -35,6 +35,12 @@
 
 1. 修改maven的配置文件：
 
+   ![image-20220629152545885](springboot.assets/image-20220629152545885.png)
+
+   在maven安装路径下的conf/settings.xml中：
+
+   修改内容：使用阿里云镜像加快镜像的下载，使用jdk1.8进行项目的编译
+
    ```xml
    <mirrors>
          <mirror>
@@ -78,7 +84,7 @@
    </dependencies>
    ```
 
-3. 编写主程序类：
+3. 编写**主程序类**：
 
    `@SpringBootApplication`注解：是一个Springboot应用
 
@@ -97,7 +103,7 @@
 4. 编写一个Controller类：
 
    ```java
-   //@Controller
+   //@Controller 
    //@ResponseBody
    @RestController
    public class HelloController {
@@ -113,7 +119,7 @@
    1. `@ResponseBody`注解：返回一个字符串，而不是解析成一个页面，可以放在方法前和类前
    2. `@RestController`注解：@`Controller`+`@ResponseBody`
 
-5. 测试：直接允许main方法
+5. 测试：直接运行main方法
 
 6. 编写一个Spring Boot的配置文件**（简化配置）**
 
@@ -121,8 +127,10 @@
    2. 参考：https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.server
    3. 示例：
 
-7. 引入插件：
+7. 可以直接将项目打包成一个可运行的jar包（fat jars）
 
+   1. 引入插件：
+   
    ```xml
    <build>
        <plugins>
@@ -135,26 +143,27 @@
    </build>
    ```
 
-   把项目打包成jar包就可以在目标服务器部署了
+   2. 把项目打包成jar包就可以在目标服务器部署了
 
    <img src="springboot.assets/image-20220509164324536.png" alt="image-20220509164324536" style="zoom:50%;" />
 
    ![image-20220509164409230](springboot.assets/image-20220509164409230.png)
 
-   要把这个去掉：
-
+   要把这个去掉（可能会卡住）：
+   
    <img src="springboot.assets/image-20220509164037310.png" alt="image-20220509164037310" style="zoom:50%;" />
 
 ## 自动配置原理
 
 ### 依赖管理
 
-1. 父项目：
+1. 父项目（每个都有）：
 
    1. 作用：用于做依赖管理
 
       ```xml
-      <parent>  		       <groupId>org.springframework.boot</groupId>
+      <parent>  		       
+          <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-parent</artifactId>
           <version>2.3.4.RELEASE</version>
       </parent>
@@ -215,7 +224,18 @@ springboot自动配置了很多东西：
 2. 自动配好SpringMVC
 
    1. 引入SpringMVC全套组件
+
    2. 自动配好SpringMVC常用组件（功能）
+
+      ```java
+      //        返回了IOC容器
+              ConfigurableApplicationContext run = SpringApplication.run(MainApplication.class, args);
+      //        查看容器里面的组件
+              String[] names = run.getBeanDefinitionNames();
+              for (String name : names) {
+                  System.out.println(name);
+              }
+      ```
 
 3. 自动配好Web常见功能，如：字符编码问题
 
@@ -575,7 +595,8 @@ springboot自动配置了很多东西：
    <project>
        <build>
            <plugins>
-               <plugin>          <groupId>org.springframework.boot</groupId>
+               <plugin>          
+                   <groupId>org.springframework.boot</groupId>
                    <artifactId>spring-boot-maven-plugin</artifactId>
                    <configuration>
                        <excludes>
