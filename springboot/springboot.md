@@ -169,7 +169,7 @@
       </parent>
       ```
 
-   2. 夫项目中几乎声明了所有开发中常用的依赖的版本号，无需关注版本号，自动版本仲裁机制
+   2. 父项目中几乎声明了所有开发中常用的依赖的版本号，无需关注版本号，自动版本仲裁机制
 
    3. 修改版本：
 
@@ -334,7 +334,7 @@ springboot自动配置了很多东西：
 ### @ImportResource注解
 
 1. 用于配置绑定
-2. 示例：`@ImportResource("classpath:beans.xml"`
+2. 示例：`@ImportResource("classpath:beans.xml)"`
 3. 将beans.xml配置文件中的组件引入
 
 ### 配置绑定
@@ -641,7 +641,7 @@ springboot自动配置了很多东西：
            [ classpath:/haha/]
    ```
 
-#### 欢迎页和自定义自定义 `Favicon`
+#### 欢迎页和自定义 `Favicon`
 
 1. 静态资源路径下  index.html
 
@@ -798,36 +798,77 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
       | 链接       | @{...} | 生成链接                           |
       | 片段表达式 | ~{...} | jsp:include 作用，引入公共页面片段 |
 
-   2. 字面量
+      `th:href`使用`$`和`@`的区别：
 
+      @会直接当成字符串处理
+   
+      ![image-20220720165813196](springboot.assets/image-20220720165813196.png)
+
+      但是如果加上前缀/：`th:href="@{/link}`时，如果有前置路径时默认会加上
+
+      <img src="springboot.assets/image-20220720170032798.png" alt="image-20220720170032798" style="zoom:80%;" />
+   
+   2. 字面量
+   
       1. 文本值: **'one text'** **,** **'Another one!'** **,…**数字: **0** **,** **34** **,** **3.0** **,** **12.3** **,…**布尔值: **true** **,** **false**
       2. 空值: **null**
       3. 变量： one，two，.... 变量不能有空格
-
+   
    3. 文本操作
-
+   
       1. 字符串拼接: **+**
       2. 变量替换: **|The name is ${name}|** 
-
+   
    4. 数学运算
-
+   
       1. 运算符: + , - , * , / , %
-
+   
    5. 布尔运算
-
+   
       1. 运算符:  **and** **,** **or**
       2. 一元运算: **!** **,** **not** 
 
    6. 比较运算
 
       1. 比较: **>** **,** **<** **,** **>=** **,** **<=** **(** **gt** **,** **lt** **,** **ge** **,** **le** **)**等式: **==** **,** **!=** **(** **eq** **,** **ne** **)** 
-
+   
    7. 条件运算
-
+   
       1. If-then: **(if) ? (then)**
       2. If-then-else: **(if) ? (then) : (else)**
       3. Default: (value) **?: (defaultvalue)** 
-
+   
    8. 特殊操作
-
+   
       1. 无操作： _
+   
+3. 使用：
+
+   1. 引入starter：
+
+      ```java
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-thymeleaf</artifactId>
+      </dependency>
+      ```
+
+   2. 自动配置好了thymeleaf，策略：
+
+      1. 所有thymeleaf的配置值都在 ThymeleafProperties
+
+      2. 配置好了 **SpringTemplateEngine** （模板引擎）
+
+      3. 配好了**ThymeleafViewResolver** （视图解析器）
+
+         默认的配置：
+
+         ```javA
+         	public static final String DEFAULT_PREFIX = "classpath:/templates/";
+         
+         	public static final String DEFAULT_SUFFIX = ".html";  //xxx.html
+         ```
+
+   3. 我们只需要直接开发页面（需要引入名称空间`<html lang="en" xmlns:th="http://www.thymeleaf.org">`）
+
+   4. 
