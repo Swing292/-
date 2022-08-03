@@ -871,4 +871,70 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
 
    3. 我们只需要直接开发页面（需要引入名称空间`<html lang="en" xmlns:th="http://www.thymeleaf.org">`）
 
+4. 抽取模板
+
+   1. 格式：
+
+      - 声明（该页面在`WEB-INF/templates/footer.html`下）
+
+      ```html
+      <div th:fragment="copy">
+            &copy; 2011 The Good Thymes Virtual Grocery
+      </div>
+      ```
+
+      - 插入
+
+      ```html
+       <div th:insert="~{footer :: copy}"></div>
+      
+       <div th:insert="footer :: copy"></div>
+      ```
+
+   2. 使用选择器的格式声明：
+
+      ```html
+      <div th:insert="footer :: (${user.isAdmin}? #{footer.admin} : #{footer.normaluser})"></div>
+      ```
+
+   3. 三种引入方式：
+
+      ```html
+      <footer th:fragment="copy">
+        &copy; 2011 The Good Thymes Virtual Grocery
+      </footer>
+      ```
+
+      1. 直接将模板插入内容区：
+
+         ```html
+          <div th:insert="footer :: copy"></div>
+         
+           <div>
+             <footer>
+               &copy; 2011 The Good Thymes Virtual Grocery
+             </footer>
+           </div>
+         ```
+
+      2. 将模板替换当前的标签：
+
+         ```html
+         <div th:replace="footer :: copy"></div>
+         
+         <footer>
+             &copy; 2011 The Good Thymes Virtual Grocery
+         </footer>
+         ```
+
+      3. 将模板的内容区插入内容区内：
+
+         ```html
+           <div th:include="footer :: copy"></div>
+         
+           <div>
+             &copy; 2011 The Good Thymes Virtual Grocery
+           </div>
+         ```
+
    4. 
