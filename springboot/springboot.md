@@ -937,4 +937,71 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
            </div>
          ```
 
-   4. 
+
+## 拦截器
+
+### 使用步骤
+
+1. 编写一个拦截器实现`HandlerInterceptor`接口
+
+   - 有三个实现方法：
+
+     <img src="springboot.assets/image-20220803224148580.png" alt="image-20220803224148580" style="zoom:150%;" />
+
+     - `preHandle`：目标方法执行之前
+     - `postHandle`：目标方法执行完成以后
+     - `afterCompletion`：页面渲染以后
+
+2. 拦截器注册到容器中（实现`WebMvcConfigurer`的`addInterceptors`方法）
+
+3. 指定拦截规则【如果拦截所有，静态资源也会被拦截】
+
+   ```java
+   @Configuration
+   public class AdminWebConfig implements WebMvcConfigurer {
+       @Override
+       public void addInterceptors(InterceptorRegistry registry) {
+           registry.addInterceptor(new LoginInterceptor())
+                   .addPathPatterns("/**")    //所有请求都被拦截，包括静态资源
+                   .excludePathPatterns("/","/login","/css/**",
+                           "/fonts/**","/images/**","/js/**");    //放行的请求
+       }
+   }
+   ```
+
+   - 拦截的请求路径：`.addPathPatterns()` 【包括静态资源】
+   - 放行的请求路径：`.excludePathPatterns()`
+
+## 文件上传
+
+```java
+    /**
+     * MutipartFile 自动封装上传过来的文件
+     * @param email
+     * @param username
+     * @param headerImg
+     * @param photos
+     * @return
+     */
+    @PostMapping("/upload")
+    public String upload(@RequestParam("email") String email,
+                         @RequestParam("username") String username,
+                         @RequestPart("headerImg") MultipartFile headerImg,
+                         @RequestPart("photos") MultipartFile[] photos) throws IOException {
+        log.info("上传的信息：email={},username={},headerImg={},photos={}",
+                email,username,headerImg.getSize(),photos.length);
+
+        if (!headerImg.isEmpty()){
+//            保存到文件服务器，OOS服务器
+            String originalFilename = headerImg.getOriginalFilename();
+            headerImg.transferTo(new File("D:\\cache\\"+originalFilename));
+        }
+        if (photos.length > 0) {
+            for (MultipartFile photo : photos) {
+                String originalFilename = photo.getOriginalFilename();
+                photo.transferTo(new File("D:\\cache\\"+originalFilename));
+            }
+        }
+        return "main";
+    }
+```
