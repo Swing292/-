@@ -1279,7 +1279,17 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
 
 1. druid官方地址：https://github.com/alibaba/druid/
 
-2. 默认数据源是**HikariDataSource**，更改数据源可在配置类中自定义：
+2. 依赖：
+
+   ```xml
+   <dependency>
+       <groupId>com.alibaba</groupId>
+       <artifactId>druid</artifactId>
+       <version>1.2.8</version>
+   </dependency>
+   ```
+   
+3. 默认数据源是**HikariDataSource**，更改数据源可在配置类中自定义：
 
    ```java
    //    自定义数据源后，HikariDataSource的数据源就会失效
@@ -1293,7 +1303,7 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
        }
    ```
 
-#### 监控配置
+#### 监控配置（麻烦版）
 
 - 地址：https://github.com/alibaba/druid/wiki/配置_StatViewServlet配置
 
@@ -1430,8 +1440,364 @@ SpringBoot默认不支持 JSP，需要引入第三方模板引擎技术实现页
                druidDataSource.setFilters("stat,wall");
        ```
 
-  5. **Spring关联的监控**
 
+#### 监控配置（直接引入starter版）
 
+1. 引入starter：
+
+   ```xml
+   <dependency>
+       <groupId>com.alibaba</groupId>
+       <artifactId>druid-spring-boot-starter</artifactId>
+       <version>1.2.8</version>
+   </dependency>
+   ```
+
+2. 对druid数据源的扩展配置项：`spring.datasource.druid`
+
+3. 数据源的自动配置导入项分析：
+
+   ```java
+   @Import({
+       //用于监控spring组件，配置项：spring.datasource.druid.aop-patterns
+   DruidSpringAopConfiguration.class, 
+       
+       //监控页的配置
+   DruidStatViewServletConfiguration.class, 
+       
+       //web监控配置，配置项：spring.datasource.druid.web-stat-filter（默认开启）
+   DruidWebStatFilterConfiguration.class, 
+       
+       //配置了所有Druid的Filter
+   DruidFilterConfiguration.class})
+   ```
+
+4. 在配置文件配置，示例：
+
+   ```yaml
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/student?useSSL=false
+       username: root
+       password: ning
+       driver-class-name: com.mysql.jdbc.Driver
+   
+       druid:
+   #      底层开启的功能（sql监控和防火墙）
+         filters: stat,wall
+   #       对filters里面的stat详细配置
+         filter:
+           stat:
+             slow-sql-millis: 1000
+             log-slow-sql: true
+           wall:
+             enabled: true
+             config:
+               drop-table-allow: false
+               
+   #        配置监控页
+         stat-view-servlet:
+           enabled: true
+           login-username: admin
+           login-password: admin
+           reset-enable: false
+           
+   #        监控web
+         web-stat-filter:
+           enabled: true
+           url-pattern: /*
+           exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+   #        监控springBean
+         aop-patterns: com.ning.admin.*
+   ```
+
+### 整合Mybatis
+
+https://github.com/mybatis
+
+引入starter：
+
+```xml
+<dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>2.1.4</version>
+</dependency>
+```
+
+<img src="springboot.assets/image-20220812140830805.png" alt="image-20220812140830805" style="zoom:67%;" />
+
+#### 配置模式
+
+1. Mybatis的原生方式：
+
+   1. 全局配置文件
+   2. SqlSessionFactory
+   3. SqlSession
+   4. Mapper
+
+2. 分析Mybatis的自动配置类：
+
+   - `@EnableConfigurationProperties({MybatisProperties.class})`：Mybatis的配置项绑定类
+
+     可以修改配置文件中前缀为mybatis的配置项：
+
+     <img src="springboot.assets/image-20220812141717866.png" alt="image-20220812141717866" style="zoom:67%;" />
+
+   - 自动配置好了SqlSessionFactory：
+
+     <img src="springboot.assets/image-20220812141857758.png" alt="image-20220812141857758" style="zoom:67%;" />
+
+   - 配置了SqlSessionTemplate、相当于SqlSession：
+
+     <img src="springboot.assets/image-20220812142031306.png" alt="image-20220812142031306" style="zoom:67%;" />
+
+   - 自动配置了Mapper：
+
+     ![image-20220812142319379](springboot.assets/image-20220812142319379.png)
+
+     只要我们写的操作MyBatis的接口标准了`@Mapper`就会被自动扫描进来
+
+     使用：
+
+3. 使用：
+
+   1. 配置mybatis规则
+
+      ```yaml
+      mybatis:
+      #  配置mybatis规则：全局配置文件和sql映射文件
+        config-location: classpath:mybatis/mybatis-config.xml
+        mapper-locations: classpath:mybatis/mapper/*.xml
+      ```
+
+      1. 全局配置文件**（可以不要）**：
+
+         ```xml
+         <?xml version="1.0" encoding="UTF-8" ?>
+         <!DOCTYPE configuration
+                 PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+                 "http://mybatis.org/dtd/mybatis-3-config.dtd">
+         <configuration>
+         <!--    <environments default="development">-->
+         <!--        <environment id="development">-->
+         <!--            <transactionManager type="JDBC"/>-->
+         <!--            <dataSource type="POOLED">-->
+         <!--                <property name="driver" value="${driver}"/>-->
+         <!--                <property name="url" value="${url}"/>-->
+         <!--                <property name="username" value="${username}"/>-->
+         <!--                <property name="password" value="${password}"/>-->
+         <!--            </dataSource>-->
+         <!--        </environment>-->
+         <!--    </environments>-->
+         <!--    <mappers>-->
+         <!--        <mapper resource="org/mybatis/example/BlogMapper.xml"/>-->
+         <!--    </mappers>-->
+         </configuration>
+         ```
+
+      2. xml文件：
+
+         ```xml
+         <?xml version="1.0" encoding="UTF-8" ?>
+         <!DOCTYPE mapper
+           PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+           "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+         <mapper namespace="org.mybatis.example.BlogMapper">
+           <select id="selectBlog" resultType="Blog">
+             select * from Blog where id = #{id}
+           </select>
+         </mapper>
+         ```
+
+   2. mybatis设置：
+
+      例：开启驼峰命名规则
+
+      - 方法一：在全局配置文件配置（原生mybatis方式）
+
+      ```xml
+      <configuration>
+          <settings>
+              <setting name="mapUnderscoreToCamelCase" value="true"/>
+          </settings>
+      </configuration>
+      ```
+
+      - 方法二：配置mybatis.configuration下的配置项：
+
+        ```yaml
+        mybatis:
+        #  配置mybatis规则：全局配置文件和sql映射文件
+        #  config-location: classpath:mybatis/mybatis-config.xml
+          mapper-locations: classpath:mybatis/mapper/*.xml
+          configuration:
+            map-underscore-to-camel-case: true
+        ```
+
+        **注：**
+
+        1. 全局配置文件里面的内容可以都放在mybatis.configuration配置项中配置
+        2. 在springboot的配置文件中配置就**不用配置mybatis全局配置文件的路径**
+
+   3. 步骤总结：
+
+      1. 导入mybatis官方starter
+      2. 编写mapper接口**（标注@Mapper）**
+      3. 编写sql映射文件并绑定mapper接口
+      4. 在application.yaml中指定Mapper配置文件的位置，以及全局配置文件的信息
+
+#### 注解模式
+
+听说白学，不学了
+
+### 整合Mybatis-plus
+
+1. 引入Mybatis-plus的starter：
+
+   ```xml
+   <dependency>
+       <groupId>com.baomidou</groupId>
+       <artifactId>mybatis-plus-boot-starter</artifactId>
+       <version>3.4.0</version>
+   </dependency>
+   ```
+
+2. 自动配置
+
+   - 配置项：`mybatis-plus`
+
+     <img src="springboot.assets/image-20220814211742623.png" alt="image-20220814211742623" style="zoom:70%;" />
+
+   - 自动配置了SqlSessionFactory：（底层是默认的数据源）
+
+     <img src="springboot.assets/image-20220814212255380.png" alt="image-20220814212255380" style="zoom:75%;" />
+
+   - 自动配置了SqlSessionTemplate：
+
+     <img src="springboot.assets/image-20220814211946445.png" alt="image-20220814211946445" style="zoom:80%;" />
+
+   - 自动配置了默认的映射配置文件位置mapperLocation：
+
+     ![image-20220814212122003](springboot.assets/image-20220814212122003.png)
+
+     `classpath*:/mapper/**/*.xml`
+
+   - 自动配置了@Mapper的自动扫描：
+
+     ![image-20220814212521894](springboot.assets/image-20220814212521894.png)
+
+     建议直接`MapperScan("xxx.mapper")`批量扫描
+
+3. **baseMapper**：
+
+   - 使用：
+
+     ```java
+     public interface UserMapper extends BaseMapper<User> {
+     
+     }
+     ```
+
+   - Mapper继承该接口后，无需编写mapper .xml文件，即可获得CRUD功能
+
+     <img src="springboot.assets/image-20220814213204766.png" alt="image-20220814213204766" style="zoom:80%;" />
+
+   - 这个Mapper支持id泛型
+
+4. **@TableField**注解：
+
+   - 标注实体类的属性是否在数据库中
+
+     ```java
+     @TableField(exist = false)
+     private String userName;
+     @TableField(exist = false)
+     private String password;
+     ```
+
+### CRUD测试
+
+1. **@TableName("user_tb1")**
+
+   - 指定操作的表名
+   - 不指定的话，默认查找跟类名相同的表名
+
+2. **IService接口**：
+
+   - Service层的总接口
+
+   ```java
+   //接口
+   public interface UserService extends IService<User> {
+   }
+   
+   //实现类(UserMapper是当前操作表使用的Mapper)
+   @Service
+   public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+   }
+   ```
+
+3. Controller层实现：
+
+   ```java
+   //    删除
+       @GetMapping("/user/delete/{id}")
+       public String deleteUser(@PathVariable("id") Long id,
+                                @RequestParam(value = "pn",defaultValue = "1")Integer pn,
+                                RedirectAttributes ra){
+           userService.removeById(id);
+           ra.addAttribute("pn",pn);
+           return "redirect:/dynamic_table";
+       }
+   
+   //    分页
+       @GetMapping("/dynamic_table")
+       public String dynamic_table(@RequestParam(value = "pn",defaultValue = "1")Integer pn, Model model){
+   //        表格内容的遍历
+   //        List<User> users=Arrays.asList(new User("zhangsan","123456"),
+   //                new User("lisi","123444"),
+   //                new User("haha","aaaaa"),
+   //                new User("hehe","aaddd"));
+   //        model.addAttribute("users",users);
+   
+   //        从数据库中查出user表中的用户进行展示
+           List<User> list = userService.list();
+   //        model.addAttribute("users",list);
+   
+   //        分页查询数据
+           Page<User> userPage = new Page<>(pn, 2);
+   //        分页查询的结果
+           Page<User> page = userService.page(userPage, null);
+   
+           model.addAttribute("page",page);
+           long current = page.getCurrent();
+           long pages = page.getPages();
+           long total = page.getTotal();
+           List<User> records = page.getRecords();
+   
+           return "table/dynamic_table";
+       }
+   ```
+
+4. 分页插件
+
+   ```java
+   @Configuration
+   public class MyBatisConfig {
+       @Bean
+       public MybatisPlusInterceptor mybatisPlusInterceptor() {
+           MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+   //        分页拦截器
+           PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor();
+           paginationInnerInterceptor.setOverflow(true);//循环回首页
+           paginationInnerInterceptor.setMaxLimit(500L);
+           interceptor.addInnerInterceptor(paginationInnerInterceptor);
+           return interceptor;
+       }
+   }
+   ```
 
 ## NoSQL
+
+### Redis自动配置
