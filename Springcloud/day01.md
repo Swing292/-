@@ -57,11 +57,111 @@
    - 不同微服务，不要重复开发相同业务
    - 微服务数据独立，不要访问其它微服务的数据库
    - 微服务可以将自己的业务暴露为接口，供其它微服务调用
-2. 
+2. 总结
+   - 微服务需要根据业务模块拆分，做到**单一职责**，不要重复开发相同业务
+   - 微服务可以**将业务暴露为接口**，供其它微服务使用
+   - 不同微服务都应该有自己**独立的数据库**
 
 ## 服务间调用
 
-# eureka注册中心
+### `RestTemplate`实现远程调用
+
+1. 在order-service中注册`RestTemplate`
+
+   配置类（主程序类）中注入：
+
+   ```java
+   @MapperScan("cn.itcast.order.mapper")
+   @SpringBootApplication
+   public class OrderApplication {
+   
+       public static void main(String[] args) {
+           SpringApplication.run(OrderApplication.class, args);
+       }
+   
+       /**
+        * 创建RestTemplate并注入Spring容器中
+        * @return
+        */
+       @Bean
+       public RestTemplate restTemplate(){
+           return new RestTemplate();
+       }
+   }
+   ```
+
+2. 通过`RestTemplate`发起的http请求实现服务远程调用：
+
+   ```java
+   @Service
+   public class OrderService {
+   
+       @Autowired
+       private OrderMapper orderMapper;
+   
+       @Autowired
+       private RestTemplate restTemplate;
+   
+       public Order queryOrderById(Long orderId) {
+           // 1.查询订单
+           Order order = orderMapper.findById(orderId);
+           
+   //        2. 利用RestTemplate发送http请求，查询用户
+   //           参数：url路径，返回值类型
+           String url="http://localhost:8081/user/"+order.getUserId();
+           User user = restTemplate.getForObject(url, User.class);
+   //        3.封装user到Order
+           order.setUser(user);
+           
+           // 4.返回
+           return order;
+       }
+   }
+   ```
+
+   - 利用`RestTemplate`的`getForObject`方法发送http请求
+   - `getForObject`参数：
+     1. url路径
+     2. 返回值类型（自动将json数据转换成指定的类型）
+
+### 提供者和服务者
+
+- 服务提供者：一次业务中，被其它微服务调用的服务。(提供接口给其它微服务)
+- 服务消费者：一次业务中，调用其它微服务的服务。(调用其它微服务提供的接口)
+
+![image-20220921123720358](day01.assets/image-20220921123720358.png)
+
+- 服务A调用服务B，服务B调用服务C，服务B既是提供者、又是消费者（看相对谁而言）
+
+# Eureka注册中心
+
+## 远程调用的问题
+
+1. 服务消费者该如何获取服务提供者的地址信息?
+   - 服务提供者启动时向**eureka注册**自己的信息
+   - eureka保存这些信息
+   - 消费者根据服务名称向eureka拉取提供者信息
+2. 如果有多个服务提供者，消费者该如何选择?
+   - 服务消费者利用**负载均衡**算法，从服务列表中挑选一个
+3. 消费者如何得知服务提供者的健康状态?
+   - 服务提供者会每隔30秒向EurekaServer发送**心跳请求**，报告健康状态
+   - eureka会更新记录服务列表信息，心跳不正常会被剔除
+   - 消费者就可以拉取到最新的信息
+
+## Eureka原理
+
+![image-20220921124440906](day01.assets/image-20220921124440906.png)
+
+1. 服务提供者：注册服务信息（注册后每30s向Eureka发一次心跳、确保状态）
+2. 服务消费者向Eureka-server拉取服务
+3. 负载均衡
+4. 调用服务
+
+### 搭建`EurekaServer`
+
+### 服务注册
+
+### 服务发现
 
 # Ribbon负载均衡原理
 
