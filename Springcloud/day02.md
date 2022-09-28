@@ -412,7 +412,7 @@
 
 # Feign远程调用
 
-### Feign替代RestTemplate
+## Feign替代RestTemplate
 
 - `RestTemplate`方式调用存在的问题
 
@@ -589,5 +589,307 @@
 
 ## 最佳实践
 
+### 方式一（继承）
+
+- 给消费者的FeignClient和提供者的controller定义统一的父接口作为标准。
+
+  ![image-20220927104122021](day02.assets/image-20220927104122021.png)
+
+- 不推荐共享接口：
+
+  - 服务紧耦合
+  - 父接口参数列表中的映射不会被继承
+
+### 方式二（抽取）
+
+- 将**FeignClient抽取为独立模块**，并且把接口有关的POJO、默认的Feign配置都放到这个模块中，提供给所有消费者使用。
+
+  ![image-20220927103741378](day02.assets/image-20220927103741378.png)
+
+- 步骤：
+
+  1. 创建一个module，命名为feign-api，然后引入feign的starter依赖：
+
+     ```xml
+     <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-openfeign</artifactId>
+     </dependency>
+     ```
+
+  2. 将order-service中编写的UserClient、User、DefaultFeignConfiguration都复制到feign-api项目中：
+
+     <img src="day02.assets/image-20220927104916489.png" alt="image-20220927104916489" style="zoom:67%;" />
+
+  3. 在order-service中引入feign-api的依赖：
+
+     ```xml
+     <!--            引入feign的统一api-->
+     <dependency>
+         <groupId>cn.itcast.demo</groupId>
+         <artifactId>feign-api</artifactId>
+         <version>1.0</version>
+     </dependency>
+     ```
+
+  4. 修改order-service中的所有与上述三个组件有关的import部分，改成导入feign-api中的包
+
+- 错误分析：当定义的FeignClient不在SpringBootApplication的扫描包范围时，这些FeignClient无法使用。
+
+  1. 指定FeignClient所在包：
+
+     ```java
+     @EnableFeignClients(basePackages = "cn.itcast.feign.clients")
+     ```
+
+  2. 指定FeignClient字节码：
+
+     ```java
+     EnableFeignclients(clients = {Userclient.class})
+     ```
+
 # Gateway服务网关
 
+## 为什么需要网关
+
+![image-20220927110629276](day02.assets/image-20220927110629276.png)
+
+- 网关功能：
+  - 身份认证和权限校验
+  - 服务路由、负载均衡
+  - 请求限流
+- 网关的**技术实现**
+  - 在SpringCloud中网关的实现包括两种:
+    - gateway：
+      - 基于Spring5中提供的WebFlux，属于响应式编程的实现，具备更好的性能。
+    - zuul（早期）：
+      - 基于Servlet的实现，属于阻塞式编程
+
+## gateway快速入门
+
+### 搭建网关服务
+
+1. 创建新的module，引入**SpringCloudGateway依赖**和**nacos服务发现依赖**：
+
+   ```xml
+   <!--        nacos服务注册发现依赖-->
+           <dependency>
+               <groupId>com.alibaba.cloud</groupId>
+               <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+           </dependency>
+   <!--        网关gateway依赖-->
+           <dependency>
+               <groupId>org.springframework.cloud</groupId>
+               <artifactId>spring-cloud-starter-gateway</artifactId>
+           </dependency>
+   ```
+
+2. 编写路由配置及nacos地址：
+
+   ```yml
+   server:
+     port: 10010
+   spring:
+     application:
+       name: gateway
+     cloud:
+       nacos:
+         server-addr: localhost:8848
+       gateway:
+         routes:
+           - id: user-service #路由标示，必须唯一
+             uri: lb://userservice #路由的目标地址
+             predicates: #路由断言,判断请求是否符合规则
+               - Path=/user/** #判断路径是否以/user开头，如果是则符合
+           - id: order-service
+             uri: lb://orderservice
+             predicates:
+               - Path=/order/**
+   ```
+
+   - **路由id**：路由的唯一标示
+   - **路由目标（uri)**：路由的目标地址，http代表固定地址，lb代表根据服务名负载均衡
+   - **路由断言（ predicates)** ：判断路由的规则
+   - **路由过滤器（ filters)** ：对请求或响应做处理
+
+3. 总结：
+
+   ![image-20220928104223623](day02.assets/image-20220928104223623.png)
+
+   
+
+## 路由断言工厂 Route Predicate Factory
+
+- 我们在配置文件中写的断言规则只是字符串，这些字符串会被Predicate Factory**读取并处理，转变为路由判断的条件**
+
+- 例如Path=/user/**是按照路径匹配，这个规则是由
+  `org.springframework.cloud.gateway.handler.predicate.PathRoutePredicateFactory`类来处理的，类似的断言工厂在SpringCloudGateway还有十几个
+
+- Spring提供了11种基本的Predicate工厂:
+
+  ![image-20220928104854078](day02.assets/image-20220928104854078.png)
+
+- 文档：https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/#gateway-request-predicates-factories
+
+## 路由过滤器GatewayFilter
+
+- GatewayFilter是网关中提供的一种过滤器，可以对**进入网关的请求**和**微服务返回的响应**做处理：
+
+  ![image-20220928110335315](day02.assets/image-20220928110335315.png)
+
+- Spring提供了31种不同的路由过滤器工厂：
+
+  ![image-20220928110430152](day02.assets/image-20220928110430152.png)
+
+- 文档：https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/#gatewayfilter-factories
+
+- demo
+
+  - 给所有进入userservice的请求添加一个请求头：`Truth=itcast is freaking awesome!`
+
+  - 实现方式:在gateway中修改application.yml文件，给userservice的路由**添加过滤器：**
+
+    ```yml
+    spring:
+      cloud:
+        gateway:
+          routes:
+            - id: user-service
+              uri: lb://userservice 
+              predicates: 
+                - Path=/user/** 
+              filters:
+                - AddRequestHeader=Truth,itcast is freaking awesome!
+    ```
+
+- **默认过滤器**：
+
+  - 如果要**对所有的路由都生效**，则可以将过滤器工厂写到default下
+
+    ```yml
+    spring:
+      cloud:
+        gateway:
+          routes:
+            - id: user-service 
+              uri: lb://userservice 
+              predicates: 
+                - Path=/user/** 
+          default-filters:
+            - AddRequestHeader=Truth,itcast is freaking awesome!
+    ```
+
+## 全局过滤器GlobalFilter
+
+- 全局过滤器的作用也是处理一切进入网关的请求和微服务响应，与GatewayFilter的作用一样
+
+- 区别：
+
+  - GatewayFilter通过**配置定义**，处理逻辑是固定的。
+  - GlobalFilter的逻辑需要自己**写代码实现**。
+
+- 定义方式：
+
+  - 实现GlobalFilter接口：
+
+    ![image-20220928145728075](day02.assets/image-20220928145728075.png)
+
+- demo
+
+  - 定义全局过滤器，拦截并判断用户身份，判断请求的参数是否满足下面条件：
+
+    - 参数中是否有authorization
+    - authorization参数值是否为admin
+
+  - 实现：
+
+    ```java
+    //@Order(-1)//越小过滤器的优先级越高(方式一)
+    @Component
+    public class AuthorizeFilter implements GlobalFilter, Ordered {
+        @Override
+        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    //        1.获取请求参数
+            ServerHttpRequest request = exchange.getRequest();
+            MultiValueMap<String, String> params = request.getQueryParams();
+    //        2.获取参数中的authorization参数
+            List<String> auth = params.get("authorization");
+    //        3.判断参数值是否等于admin
+            if ("admin".equals(auth)) {
+    //        4.是,放行
+                return chain.filter(exchange);
+            }else
+    //        5.否,拦截
+    //        5.1 设置状态码
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+    //        5.2 拦截请求
+            return exchange.getResponse().setComplete();
+        }
+    
+    //    方式二
+        @Override
+        public int getOrder() {
+            return -1;
+        }
+    }
+    ```
+
+  - 实现GlobalFilter接口
+
+  - 添加@0rder注解或实现Ordered接口（定义过滤器顺序）
+
+  - 编写处理逻辑
+
+## 过滤器执行顺序
+
+- 请求进入网关会碰到三类过滤器：
+
+  - 当前路由的过滤器
+  - DefaultFilter
+  - GlobalFilter
+
+- 请求路由后，会将三类过滤器合并到一个**过滤器链（集合）**中，排序后依次执行每个过滤器
+
+  ![image-20220928152818457](day02.assets/image-20220928152818457.png)
+
+- 每个过滤器都必须指定一个int类型的order值，**order值越小，优先级越高，执行顺序越靠前。**
+
+  - GlobalFilter由我们自己指定
+  - 路由过滤器和defaultFilter的order由Spring指定，默认是**按照声明顺序从1递增**。
+    - 写得越前，优先级越高
+    - 当过滤器的order值一样时，会按照**defaultFilter >路由过滤器>GlobalFilter**的顺序执行
+
+## 跨域问题
+
+- 跨域：域名不一致就是跨域，主要包括
+
+  - 域名不同： www.taobao.com和www.taobao.org和www.jd.com和miaosha.jd.com
+  - 域名相同，端口不同：`localhost:8080`和`localhost8081`
+
+- 跨域问题：**浏览器禁止**请求的发起者与服务端发生**跨域ajax请求**，请求被浏览器拦截的问题
+
+- 解决方案：CORS
+
+- 网关处理跨域采用的同样是CORS方案，并且只需要简单配置即可实现：
+
+  ```yml
+  spring:
+    cloud:
+      gateway:
+        globalcors: # 全局的跨域处理
+          add-to-simple-url-handler-mapping: true # 解决options请求被拦截问题
+          corsConfigurations:
+            '[/**]':
+              allowedOrigins: # 允许哪些网站的跨域请求
+                - "http://localhost:8090"
+                - "http://www.leyou.com"
+              allowedMethods: # 允许的跨域ajax的请求方式
+                - "GET"
+                - "POST"
+                - "DELETE"
+                - "PUT"
+                - "OPTIONS"
+              allowedHeaders: "*" # 允许在请求中携带的头信息
+              allowCredentials: true # 是否允许携带cookie
+              maxAge: 360000 # 这次跨域检测的有效期
+  ```
