@@ -44,7 +44,132 @@
 
   <img src="day03.assets/image-20220928225034201.png" alt="image-20220928225034201" style="zoom:67%;" />
 
+### 镜像和容器
+
+- **镜像（Image)** ：
+
+  -  Docker将应用程序及其所需的依赖、函数库、环境、配置等文件打包在一起，称为镜像。
+
+- **容器(Container)**：
+
+  - 镜像中的应用程序运行后形成的进程就是容器，只是Docker会给容器做隔离，对外不可见。
+
+- Docker和DockerHub：
+
+  ![image-20220929084614439](day03.assets/image-20220929084614439.png)
+
+  - **DockerHub：** DockerHub是一个Docker镜像的**托管平台**。这样的平台称为Docker Registry。
+  - 国内也有类似于DockerHub的公开服务，比如网易云镜像服务，阿里云镜像库等。
+
+### docker架构
+
+- Docker是一个**CS架构**的程序，由两部分组成：
+
+  <img src="day03.assets/image-20220929085011469.png" alt="image-20220929085011469" style="zoom:80%;" />
+
+  - **服务端(server)：**Docker守护进程，负责处理Docker指令，管理镜像、容器等
+  - **客户端(client)：**通过命令（本地）或RestAPI（远程）向Docker服务端发送指令。可以在本地或远程向服务端发送指令。
+
+### 安装Docker
+
+- 企业部署一般都是采用Linux操作系统，而其中又数CentOS发行版占比最多，因此我们在CentOS下安装Docker。
+
+- Docker分为**CE**和**EE**两大版本。CE即社区版（免费），EE即企业版（付费）。
+
+- Docker CE支持64位版本CentOS 7，并且要求内核版本不低于3.10, CentOs 7满足最低内核的要求。
+
+  ![image-20220929085705915](day03.assets/image-20220929085705915.png)
+
+- **安装Docker**：
+
+  1. 安装yum工具：
+
+     ```sh
+     yum install -y yum-utils \
+                device-mapper-persistent-data \
+                lvm2 --skip-broken
+     ```
+
+  2. 更新本地镜像源：
+
+     ```sh
+     # 设置docker镜像源
+     yum-config-manager \
+         --add-repo \
+         https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+         
+     sed -i 's/download.docker.com/mirrors.aliyun.com\/docker-ce/g' /etc/yum.repos.d/docker-ce.repo
+     
+     yum makecache fast
+     ```
+
+  3. 输入命令，安装Docker社区免费版本docker-ce：
+
+     ```sh
+     yum install -y docker-ce
+     ```
+
+- **启动Docker**：
+
+  1. Docker应用需要用到各种端口，逐一去修改防火墙设置比较麻烦，可以直接关闭：
+
+     ```sh
+     # 关闭
+     systemctl stop firewalld
+     # 禁止开机启动防火墙
+     systemctl disable firewalld
+     ```
+
+  2. 启动docker：
+
+     ```sh
+     systemctl start docker  # 启动docker服务
+     
+     systemctl stop docker  # 停止docker服务
+     
+     systemctl restart docker  # 重启docker服务
+     ```
+
+  3. 查看docker版本：
+
+     ```sh
+     docker -v
+     ```
+
+  4. 查看启动状态：
+
+     ```sh
+     stemctl status docker
+     ```
+
+- **配置镜像**：
+
+  - docker官方镜像仓库网速较差，我们需要设置国内镜像服务
+
+  - 参考阿里云的镜像加速文档：https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors
+
+  - 步骤（文档中可查看）：
+
+    - 通过修改daemon配置文件/etc/docker/daemon.json来使用加速器
+
+      ```sh
+      sudo mkdir -p /etc/docker
+      sudo tee /etc/docker/daemon.json <<-'EOF'
+      {
+        "registry-mirrors": ["https://79h900ac.mirror.aliyuncs.com"]
+      }
+      EOF
+      sudo systemctl daemon-reload
+      sudo systemctl restart docker
+      ```
+
 ## Docker的基本操作
+
+### 镜像操作
+
+### 容器操作
+
+### 数据卷（容器数据管理)
 
 ## Dockerfile自定义镜像
 
