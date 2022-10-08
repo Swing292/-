@@ -167,6 +167,95 @@
 
 ### 镜像操作
 
+1. 镜像名称一般分两部分组成：
+
+   - [repository]:tag
+
+   - 例：
+
+     <img src="day03.assets/image-20221007230207333.png" alt="image-20221007230207333" style="zoom:67%;" />
+
+   - 在没有指定taa时，默认是latest,，代表最新版本的镜像
+
+2. 镜像相关命令：
+
+   - 查看帮助：
+
+     - `docker --help`
+
+       ![image-20221007230703756](day03.assets/image-20221007230703756.png)
+
+   - **相关命令：**
+
+     ![image-20221007230818615](day03.assets/image-20221007230818615.png)
+
+     - docker images：查看镜像
+     - docker rmi：删除镜像
+     - docker pull：从服务拉取镜像
+     - docker push：推送镜像到服务
+     - docker save：保存镜像为一个压缩包
+     - docker load：加载压缩包为镜像
+
+#### demo - 从DockerHub中拉取一个nginx镜像并查看
+
+1. 去镜像仓库搜索nginx镜像，比如DockerHub（https://hub.docker.com/）：
+
+   ![image-20221007231301507](day03.assets/image-20221007231301507.png)
+
+2. 搜索镜像，拉取自己需要的镜像，通过命令：`docker pull nginx`
+
+   ![image-20221007231453738](day03.assets/image-20221007231453738.png)
+
+   ![image-20221007231600819](day03.assets/image-20221007231600819.png)
+
+3. 查看拉取到的镜像，通过命令：`docker images`
+
+   ![image-20221007231652280](day03.assets/image-20221007231652280.png)
+
+#### demo - 利用docker save将nginx镜像导出磁盘，然后再通过load加载回来
+
+1. 利用`docker xx --help`命令查看`docker save`和`docker load`的语法
+
+   ![image-20221007232041177](day03.assets/image-20221007232041177.png)
+
+2. 使用`docker save`导出镜像到磁盘
+
+   ![image-20221007232716142](day03.assets/image-20221007232716142.png)
+
+3. 删除镜像，加载镜像
+
+   ![image-20221007233324771](day03.assets/image-20221007233324771.png)
+
+#### demo - 去DockerHub搜索并拉取一个Redis镜像
+
+1. 去DockerHub搜索Redis镜像：
+
+   ![image-20221007233746140](day03.assets/image-20221007233746140.png)
+
+2. 查看Redis镜像的名称和版本
+
+   ![image-20221007233828349](day03.assets/image-20221007233828349.png)
+
+3. 利用docker pull命令拉取镜像
+
+   ![image-20221007233955979](day03.assets/image-20221007233955979.png)
+
+4. 利用docker save命令将redis:latest打包为一个redis.tar包
+
+   ![image-20221007234212922](day03.assets/image-20221007234212922.png)
+
+   ![image-20221007234143533](day03.assets/image-20221007234143533.png)
+
+5. 利用docker rmi删除本地的redis:latest
+
+   ![image-20221007234445549](day03.assets/image-20221007234445549.png)
+
+   ![image-20221007234418474](day03.assets/image-20221007234418474.png)
+
+6. 利用docker load重新加载redis.tar文件
+
+   ![image-20221007234609477](day03.assets/image-20221007234609477.png)
+
 ### 容器操作
 
 ### 数据卷（容器数据管理)
