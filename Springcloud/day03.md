@@ -167,34 +167,34 @@
 
 ### 镜像操作
 
-1. 镜像名称一般分两部分组成：
+镜像名称一般分两部分组成：
 
-   - [repository]:tag
+- [repository]:tag
 
-   - 例：
+- 例：
 
-     <img src="day03.assets/image-20221007230207333.png" alt="image-20221007230207333" style="zoom:67%;" />
+  <img src="day03.assets/image-20221007230207333.png" alt="image-20221007230207333" style="zoom:67%;" />
 
-   - 在没有指定taa时，默认是latest,，代表最新版本的镜像
+- 在没有指定taa时，默认是latest,，代表最新版本的镜像
 
-2. 镜像相关命令：
+#### 相关命令
 
-   - 查看帮助：
+- 查看帮助：
 
-     - `docker --help`
+  - `docker --help`
 
-       ![image-20221007230703756](day03.assets/image-20221007230703756.png)
+    ![image-20221007230703756](day03.assets/image-20221007230703756.png)
 
-   - **相关命令：**
+- **常用命令：**
 
-     ![image-20221007230818615](day03.assets/image-20221007230818615.png)
+  ![image-20221007230818615](day03.assets/image-20221007230818615.png)
 
-     - docker images：查看镜像
-     - docker rmi：删除镜像
-     - docker pull：从服务拉取镜像
-     - docker push：推送镜像到服务
-     - docker save：保存镜像为一个压缩包
-     - docker load：加载压缩包为镜像
+  - docker images：查看镜像
+  - docker rmi：删除镜像
+  - docker pull：从服务拉取镜像
+  - docker push：推送镜像到服务
+  - docker save：保存镜像为一个压缩包
+  - docker load：加载压缩包为镜像
 
 #### demo - 从DockerHub中拉取一个nginx镜像并查看
 
@@ -257,6 +257,133 @@
    ![image-20221007234609477](day03.assets/image-20221007234609477.png)
 
 ### 容器操作
+
+#### 相关命令
+
+![image-20221008112641823](day03.assets/image-20221008112641823.png)
+
+- docker run：创建容器
+- docker exec：进入容器执行命令
+- docker logs：查看容器运行日志
+- docker ps：查看所有运行的容器及状态
+- docker pause：运行 --> 暂停
+- docker unpause：暂停 --> 运行
+- docker start：运行 --> 停止
+- docker stop：停止 --> 运行
+
+#### demo - 创建运行一个Nginx容器
+
+1. 去docker hub查看Nginx的容器运行命令：
+
+   ![image-20221008113728997](day03.assets/image-20221008113728997.png)
+
+   - 命令解读
+
+     ```sh
+     docker run --name some-nginx -d -p 8080:80 some-content-nginx
+     ```
+
+     - docker run：创建并运行一个容器
+
+     - --name：给容器起一个名字，比如叫做mn
+
+     - -p：将宿主机端口与容器端口映射，冒号**左侧是宿主机端口，右侧是容器端口**
+
+       <img src="day03.assets/image-20221008114241403.png" alt="image-20221008114241403" style="zoom: 67%;" />
+
+     - -d：后台运行容器
+
+     - nginx：镜像名称，例如nginx
+
+2. 执行命令：
+
+   ![image-20221008121636656](day03.assets/image-20221008121636656.png)
+
+3. 查看：
+
+   ![image-20221008121700267](day03.assets/image-20221008121700267.png)
+
+4. 测试，浏览器输入http://192.168.50.119:80
+
+   ![image-20221008121615744](day03.assets/image-20221008121615744.png)
+
+5. 查看日志：
+
+   ![image-20221008122018110](day03.assets/image-20221008122018110.png)
+
+   - 查看日志的使用：
+
+     ![image-20221008122215589](day03.assets/image-20221008122215589.png)
+
+     - -f：持续跟踪
+
+       ![image-20221008122307805](day03.assets/image-20221008122307805.png)
+
+     - 测试，日志成功跟踪：
+
+       ![image-20221008122349684](day03.assets/image-20221008122349684.png)
+
+#### demo - 进入Nginx容器，修改HTML文件内容，添加“传智教育欢迎您”
+
+1. 进入容器
+
+   - 进入我们刚刚创建的nginx容器
+
+   - 命令为：
+
+     ```sh
+     docker exec -it mn bash
+     ```
+
+   - 命令解读：
+
+     - docker exec：进入容器内部，执行一个命令
+     - -it：给当前进入的容器创建一个标准输入、输出终端，允许我们与容器交互
+     - mn：要进入的容器的名称
+     - bash：进入容器后执行的命令，bash是一个linux终端交互命令
+
+   - exec命令可以进入容器修改文件，但是在容器内修改文件**是不推荐的**
+
+2. 进入nginx的HTML所在目录`/usr/share/nginx/html`
+
+   ```sh
+   cd /usr/share/nginx/html
+   ```
+
+3. 修改index.html的内容
+
+   ```sh
+   sed -i 's#Welcome to nginx#传智教育欢迎您#g' index.html
+   sed -i 's#<head>#<head><meta charset="utf-8">#g' index.html
+   ```
+
+4. 修改成功：
+
+   <img src="day03.assets/image-20221009154443445.png" alt="image-20221009154443445" style="zoom:67%;" />
+
+5. 退出容器：
+
+   <img src="day03.assets/image-20221009154532048.png" alt="image-20221009154532048" style="zoom:67%;" />
+
+6. 停止容器：
+
+   ![image-20221009154935143](day03.assets/image-20221009154935143.png)
+
+7. 删除容器：
+
+   <img src="day03.assets/image-20221009155410156.png" alt="image-20221009155410156" style="zoom:67%;" />
+
+   - 注：不能删除运行中的容器，除非添加 -f 参数
+
+#### demo - 创建并运行一个redis容器，并且支持数据持久化
+
+1. 到DockerHub搜索Redis镜像
+
+2. 查看Redis镜像文档中的帮助信息
+
+   ![image-20221009165831888](day03.assets/image-20221009165831888.png)
+
+3. 利用docker run命令运行一个Redis容器
 
 ### 数据卷（容器数据管理)
 

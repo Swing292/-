@@ -220,3 +220,7 @@
 
 4. 工作一般情况下在新建的dev后，dev分支代码稳定后可以合并到主分支master上
 
+https://blog.csdn.net/Vanllen_moon/article/details/120627566
+
+https://www.jianshu.com/p/40a8a53085c0
+
